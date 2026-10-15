@@ -1,0 +1,30 @@
+{
+  "name": "nettools",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Fast, ad-free network tools running on Cloudflare Workers",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "types": "wrangler types",
+    "typecheck": "wrangler types >/dev/null && tsc --noEmit",
+    "test": "vitest run",
+    "check": "npm run typecheck && npm test",
+    "brand": "scripts/brand.sh",
+    "db:migrate:local": "wrangler d1 migrations apply nettools --local",
+    "db:migrate": "wrangler d1 migrations apply nettools --remote",
+    "mac:update": "node scripts/update-mac-vendors.mjs",
+    "geo:update": "node scripts/update-geo.mjs",
+    "data:update": "npm run geo:update && npm run mac:update"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.7",
+    "wrangler": "^4.151.0"
+  }
+}

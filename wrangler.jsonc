@@ -1,0 +1,42 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "nettools",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS"
+  },
+  "vars": {
+    "SITE_URL": "https://net.rockykln.com"
+  },
+  // Per Cloudflare location, keyed by client IP. Periods may only be 10 or 60 seconds.
+  // RL_SPEED: one speed test makes 100+ requests on a gigabit line (more on faster ones), and the page suggests repeating it.
+  "ratelimits": [
+    { "name": "RL_TOOLS", "namespace_id": "7101", "simple": { "limit": 30, "period": 60 } },
+    { "name": "RL_HEAVY", "namespace_id": "7103", "simple": { "limit": 10, "period": 60 } },
+    { "name": "RL_ROOT", "namespace_id": "7104", "simple": { "limit": 30, "period": 60 } },
+    { "name": "RL_SPEED", "namespace_id": "7102", "simple": { "limit": 600, "period": 60 } }
+  ],
+  "routes": [
+    { "pattern": "net.rockykln.com", "custom_domain": true }
+  ],
+  // Create with `npx wrangler d1 create nettools` and paste the id; apply schema with `npm run db:migrate`.
+  "d1_databases": [
+    { "binding": "DB", "database_name": "nettools", "database_id": "debf31ce-ff78-4ac6-97ee-bef749620d70", "migrations_dir": "migrations" }
+  ],
+  // Root server monitoring every 10 minutes.
+  "triggers": { "crons": ["*/10 * * * *"] },
+  // Custom metrics per request (kind, route, country, colo, duration, status). Never user input or IPs.
+  "analytics_engine_datasets": [
+    { "binding": "EVENTS", "dataset": "nettools_events" }
+  ],
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1,
+    "redact_query_string": false,
+    "logs": { "enabled": true, "head_sampling_rate": 1, "invocation_logs": true, "persist": true },
+    "traces": { "enabled": true, "head_sampling_rate": 0.2, "persist": true },
+    "issue_detection": { "enabled": true }
+  }
+}
