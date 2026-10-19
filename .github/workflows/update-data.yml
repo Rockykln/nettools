@@ -1,7 +1,7 @@
 name: Update data
 
-# Refreshes the IP country (DB-IP Lite) and MAC vendor (IEEE) data on the 3rd of every month.
-# The repository keeps a single commit, so the update amends it; Workers Builds deploys the push.
+# Refreshes the IP country (DB-IP Lite) and MAC vendor (IEEE) data on the 3rd of every month
+# and commits the result; Workers Builds deploys the push.
 on:
   schedule:
     - cron: '17 4 3 * *'
@@ -40,11 +40,10 @@ jobs:
       - name: Test with the new data
         if: steps.diff.outputs.changed == 'true'
         run: npm run typecheck && npm test
-      - name: Amend the commit and push
+      - name: Commit and push
         if: steps.diff.outputs.changed == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          old=$(git rev-parse HEAD)
-          git commit --amend --no-edit
-          git push --force-with-lease=main:"$old" origin HEAD:main
+          git commit -m "Update IP country and MAC vendor data ($(date -u +%Y-%m))"
+          git push origin HEAD:main
