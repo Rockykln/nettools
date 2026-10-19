@@ -36,13 +36,16 @@ interface Report {
   findings: { level: Level; text: string }[];
 }
 
-// Follows redirects through the SSRF guard, then fetches the final URL once more for its body.
+// Follows redirects through the SSRF guard and returns the final response with its body.
 async function fetchFinal(url: string, env: Env, accept: string): Promise<Response | { error: string; status?: number }> {
-  const chain = await fetchChain(url, env);
+  const chain = await fetchChain(url, env, { accept, keepBody: true });
   const last = chain.hops[chain.hops.length - 1];
-  if (chain.error || !last) return { error: chain.error ?? 'No response' };
-  if (last.status >= 400) return { error: `The page answered with HTTP ${last.status}`, status: last.status };
-  return fetch(last.url, { redirect: 'manual', headers: { 'user-agent': USER_AGENT, accept }, signal: AbortSignal.timeout(8000) });
+  if (chain.error || !last || !chain.final) return { error: chain.error ?? 'No response' };
+  if (last.status >= 400) {
+    await chain.final.body?.cancel().catch(() => {});
+    return { error: `The page answered with HTTP ${last.status}`, status: last.status };
+  }
+  return chain.final;
 }
 
 const ENTITIES: Record<string, string> = {
@@ -231,7 +234,7 @@ const tool: Tool = {
   h1: 'Social preview checker',
   lead: 'See how a link will look when shared, and which Open Graph and Twitter tags are missing.',
   // The image proxy is requested by every preview page and only gets the normal limit.
-  heavy: (url) => !url.pathname.endsWith('/image'),
+  heavy: (url) => url.pathname !== '/api/social-preview/image',
   examples: [['github.com', 'url=https://github.com'], ['wikipedia.org', 'url=https://www.wikipedia.org']],
   related: ['http-headers', 'robots-txt', 'is-it-down'],
   isQuery: (url) => url.searchParams.has('url'),
@@ -258,6 +261,7 @@ ${tags.length ? html`<table class="data records pairs"><colgroup><col class="c-n
 
   async api(c, sub) {
     if (sub === 'image') return proxyImage(c);
+    if (sub !== '') return json({ error: 'Not found' }, { status: 404 });
     const url = normalizeUrl(c.url.searchParams.get('url') ?? '');
     if (!url) return json({ error: INVALID }, { status: 400 });
     const r = await analyze(url, c.env);

@@ -27,14 +27,13 @@ interface Report {
 }
 
 async function getText(url: string, env: Env, max: number): Promise<{ status: number; text: string; finalUrl: string; truncated: boolean } | { error: string }> {
-  const chain = await fetchChain(url, env);
+  const chain = await fetchChain(url, env, { accept: '*/*', keepBody: true });
   const last = chain.hops[chain.hops.length - 1];
-  if (chain.error || !last) return { error: chain.error ?? 'No response' };
-  if (last.status >= 400) return { status: last.status, text: '', finalUrl: last.url, truncated: false };
-  const res = await fetch(last.url, { redirect: 'manual', headers: { 'user-agent': USER_AGENT }, signal: AbortSignal.timeout(10000) });
+  const res = chain.final;
+  if (chain.error || !last || !res) return { error: chain.error ?? 'No response' };
   if (res.status >= 300) {
     await res.body?.cancel().catch(() => {});
-    return { status: res.status >= 400 ? res.status : last.status, text: '', finalUrl: last.url, truncated: false };
+    return { status: last.status, text: '', finalUrl: last.url, truncated: false };
   }
   const reader = res.body?.getReader();
   let text = '';

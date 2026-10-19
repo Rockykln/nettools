@@ -54,7 +54,11 @@ const CSP = [
 export function withSecurityHeaders(res: Response): Response {
   const out = new Response(res.body, res);
   const h = out.headers;
-  if (!h.has('content-security-policy')) h.set('content-security-policy', CSP);
+  if (!h.has('content-security-policy')) {
+    // Cloudflare copies a nonce from this header onto the JavaScript Detections script it injects into HTML pages.
+    const nonce = (h.get('content-type') ?? '').startsWith('text/html') ? btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(16)))) : null;
+    h.set('content-security-policy', nonce ? CSP.replace("script-src 'self'", `script-src 'self' 'nonce-${nonce}'`) : CSP);
+  }
   h.set('x-content-type-options', 'nosniff');
   // Rate limits count per minute.
   if (out.status === 429 && !h.has('retry-after')) h.set('retry-after', '60');

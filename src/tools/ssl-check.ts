@@ -100,10 +100,11 @@ async function httpsResponds(host: string): Promise<number | null> {
   }
 }
 
-async function check(host: string, env: Env, cloudflare: boolean): Promise<Report> {
+async function check(host: string, env: Env, cloudflare: boolean, address: string): Promise<Report> {
   const https = cloudflare ? httpsResponds(host) : null;
   const [tcpMs, tlsMs, chain, certs] = await Promise.all([
-    https ?? opens(host, false),
+    // The plain TCP probe uses the address the guard checked; TLS needs the host name for SNI and verification.
+    https ?? opens(address, false),
     https ?? opens(host, true),
     fetchChain(`http://${host}/`, env).catch(() => null),
     ctCerts(host),
@@ -180,7 +181,7 @@ const tool: Tool = {
     if (!host) return html`${form(value)}<p class="error">${INVALID}</p>`;
     const target = await checkTarget(host, c.env);
     if (!target.ok) return html`${form(value)}<p class="error">${target.reason}</p>`;
-    const r = await check(host, c.env, target.addresses.some(isCloudflareAddress));
+    const r = await check(host, c.env, target.addresses.some(isCloudflareAddress), target.addresses[0]!);
     return html`${form(value)}${verdict(r)}
 <table class="kv compact"><tbody>
 ${r.cloudflare ? html`<tr><th scope="row">Hosting</th><td>Cloudflare (handshake checked via HTTPS request)</td></tr>` : ''}
@@ -203,7 +204,7 @@ ${r.certs === null ? html`<p class="muted">Certificate Transparency data is not 
     if (!host) return json({ error: INVALID }, { status: 400 });
     const target = await checkTarget(host, c.env);
     if (!target.ok) return json({ error: target.reason }, { status: 400 });
-    return json(await check(host, c.env, target.addresses.some(isCloudflareAddress)));
+    return json(await check(host, c.env, target.addresses.some(isCloudflareAddress), target.addresses[0]!));
   },
 
   article: html`<h2>What this check does</h2>

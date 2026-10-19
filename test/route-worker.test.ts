@@ -153,3 +153,34 @@ describe('crawler detection', () => {
     expect(isCrawler(null)).toBe(false);
   });
 });
+
+describe('security hardening', () => {
+  it('adds a fresh CSP nonce to HTML pages only', async () => {
+    const a = (await call('/legal')).headers.get('content-security-policy')!;
+    const b = (await call('/legal')).headers.get('content-security-policy')!;
+    expect(a).toMatch(/script-src 'self' 'nonce-[A-Za-z0-9+/=]{24}' 'sha256-/);
+    expect(a).not.toBe(b);
+    expect((await call('/robots.txt')).headers.get('content-security-policy')).not.toContain('nonce-');
+  });
+
+  it('shows the /go link only when opened from this site', async () => {
+    const target = encodeURIComponent('https://example.org/x');
+    const inside = await (await call(`/go?url=${target}`, { headers: { 'sec-fetch-site': 'same-origin' } })).text();
+    const outside = await (await call(`/go?url=${target}`, { headers: { 'sec-fetch-site': 'cross-site' } })).text();
+    expect(inside).toContain('href="https://example.org/x"');
+    expect(outside).not.toContain('href="https://example.org/x"');
+    expect(outside).toContain('https://example.org/x');
+  });
+
+  it('refuses chain URLs with other ports, schemes or credentials before any request', async () => {
+    const { fetchChain } = await import('../src/core/http-probe');
+    const spy = vi.spyOn(globalThis, 'fetch');
+    for (const u of ['http://93.184.215.15:6379/', 'ftp://example.org/', 'https://user:pw@example.org/']) {
+      const chain = await fetchChain(u, env);
+      expect(chain.errorKind).toBe('refused');
+      expect(chain.hops).toHaveLength(0);
+    }
+    expect(spy).not.toHaveBeenCalled();
+    spy.mockRestore();
+  });
+});

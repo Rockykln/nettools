@@ -94,7 +94,7 @@ async function fetchRdap(url: string, lenient: boolean): Promise<{ status: numbe
 
 /** Wording plain WHOIS servers use for unregistered names. */
 export const WHOIS_NOT_FOUND =
-  /status:\s*(free|available)\b|no match\b|not found|no entries found|no data found|no matching record|object does not exist|no information available about domain|nothing found|we do not have an entry|is available for (registration|purchase)|^\s*\S+ is free\b|not registered/im;
+  /status:\s*(free|available)\b|no match\b|not found|no entries found|no data found|no matching record|object does not exist|no information available about domain|nothing found|we do not have an entry|is available for (registration|purchase)|^[ \t]*\S+ is free\b|not registered/im;
 
 // Answers that mean the server refused the query, not that the name is free or taken.
 const WHOIS_REFUSED = /limit exceeded|access control limit|quota exceeded|too many (requests|queries)|rate limit/i;

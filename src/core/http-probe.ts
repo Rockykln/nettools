@@ -22,6 +22,30 @@ export interface Chain {
    * determined), `network` (connection, TLS or timeout) or `redirect` (loop, limit or a target that is not followed).
    */
   errorKind?: 'refused' | 'unresolved' | 'network' | 'redirect';
+  /** With `keepBody`: the final, non-redirect response with its body unread. The caller must consume or cancel it. */
+  final?: Response;
+}
+
+export interface ChainOptions {
+  maxHops?: number;
+  timeoutMs?: number;
+  accept?: string;
+  /** Keep the body of the final response, so callers do not fetch the URL a second time past the guard. */
+  keepBody?: boolean;
+}
+
+/** Scheme, port and credential rules for every URL the chain requests, including ones taken from fetched content. */
+function urlAllowed(url: string): string | null {
+  let u: URL;
+  try {
+    u = new URL(url);
+  } catch {
+    return 'Invalid URL';
+  }
+  if (u.protocol !== 'http:' && u.protocol !== 'https:') return `Only http and https URLs are checked, not ${u.protocol}`;
+  if (u.port && !ALLOWED_PORTS.includes(u.port)) return `Port ${u.port} is not checked; use the port checker for other ports`;
+  if (u.username || u.password) return 'URLs with credentials are not checked';
+  return null;
 }
 
 const ALLOWED_PORTS = ['80', '443', '8080', '8443'];
@@ -66,12 +90,15 @@ export function redirectTarget(location: string, base: string): { url: string } 
   return { url: next.toString() };
 }
 
-export async function fetchChain(start: string, env: Env, maxHops = 5, timeoutMs = 8000): Promise<Chain> {
+export async function fetchChain(start: string, env: Env, opts: ChainOptions = {}): Promise<Chain> {
+  const { maxHops = 5, timeoutMs = 8000, accept = 'text/html,application/xhtml+xml,*/*;q=0.8', keepBody = false } = opts;
   const hops: Hop[] = [];
   const deadline = Date.now() + 15000;
   let url = start;
   for (let i = 0; i < maxHops; i++) {
     // Every hop is checked again: a public URL may redirect to a private or internal address.
+    const bad = urlAllowed(url);
+    if (bad) return { hops, error: bad, errorKind: 'refused' };
     const target = await checkTarget(new URL(url).hostname, env);
     if (!target.ok) return { hops, error: target.reason, errorKind: target.kind === 'policy' ? 'refused' : 'unresolved' };
     const remaining = Math.min(timeoutMs, deadline - Date.now());
@@ -82,7 +109,7 @@ export async function fetchChain(start: string, env: Env, maxHops = 5, timeoutMs
       res = await fetch(url, {
         method: 'GET',
         redirect: 'manual',
-        headers: { 'user-agent': USER_AGENT, accept: 'text/html,application/xhtml+xml,*/*;q=0.8' },
+        headers: { 'user-agent': USER_AGENT, accept },
         signal: AbortSignal.timeout(remaining),
       });
     } catch (e) {
@@ -90,8 +117,9 @@ export async function fetchChain(start: string, env: Env, maxHops = 5, timeoutMs
       return { hops, error: timedOut ? `No response within ${Math.round(remaining / 1000)} seconds` : 'Could not connect (DNS, TLS or network error)', errorKind: 'network' };
     }
     const ms = Date.now() - t0;
-    res.body?.cancel().catch(() => {});
     const location = res.headers.get('location');
+    const isRedirect = res.status >= 300 && res.status < 400 && !!location;
+    if (!keepBody || isRedirect) res.body?.cancel().catch(() => {});
     hops.push({
       url,
       status: res.status,
@@ -108,7 +136,7 @@ export async function fetchChain(start: string, env: Env, maxHops = 5, timeoutMs
       url = next.url;
       continue;
     }
-    return { hops, error: null };
+    return keepBody ? { hops, error: null, final: res } : { hops, error: null };
   }
   return { hops, error: `Stopped after ${maxHops - 1} redirects`, errorKind: 'redirect' };
 }

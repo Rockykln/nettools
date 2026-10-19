@@ -46,10 +46,11 @@ async function tcpTime(host: string, port: number): Promise<number> {
 }
 
 // One fresh connection: (TLS handshake), then a GET request read to the end or MAX_BODY.
-async function httpRun(u: URL, tcpMs: number): Promise<Run> {
+async function httpRun(u: URL, tcpMs: number, address: string): Promise<Run> {
   const https = u.protocol === 'https:';
   const start = Date.now();
-  const s = connect({ hostname: socketHost(bare(u.hostname)), port: Number(u.port) || (https ? 443 : 80) }, { secureTransport: https ? 'on' : 'off', allowHalfOpen: false });
+  // Plain HTTP connects to the address the guard checked; HTTPS needs the host name for SNI and verification.
+  const s = connect({ hostname: socketHost(https ? bare(u.hostname) : address), port: Number(u.port) || (https ? 443 : 80) }, { secureTransport: https ? 'on' : 'off', allowHalfOpen: false });
   const run: Run = { tcpMs, ttfbMs: null, totalMs: null, bytes: 0, status: null, error: null };
   try {
     await withTimeout(s.opened, 8000);
@@ -129,12 +130,12 @@ async function measure(c: ToolContext, url: string): Promise<Report | { error: s
   for (let i = 0; i < RUNS; i++) {
     let tcp: number;
     try {
-      tcp = await tcpTime(bare(u.hostname), port);
+      tcp = await tcpTime(target.addresses[0]!, port);
     } catch {
       runs.push({ tcpMs: null, ttfbMs: null, totalMs: null, bytes: 0, status: null, error: 'TCP connection failed' });
       continue;
     }
-    runs.push(await httpRun(u, tcp));
+    runs.push(await httpRun(u, tcp, target.addresses[0]!));
   }
   return { url, host: bare(u.hostname), https: u.protocol === 'https:', dnsMs, addresses: target.addresses, cloudflare: false, runs };
 }

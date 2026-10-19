@@ -313,6 +313,9 @@ export function goPage(c: ToolContext): Response {
   if (!target) return notFoundPage(c);
   const href = target.toString();
   const host = target.hostname;
+  // Tools link here from this site's own pages. Opened from elsewhere (a mail, a chat), the page shows the address
+  // without a link, so it cannot serve as a trustworthy-looking redirect for phishing.
+  const fromSite = c.req.headers.get('sec-fetch-site') === 'same-origin';
   const body = html`<div class="wrap narrow">
 <h1>You are leaving ${SITE.name}</h1>
 <p class="lead">This link leads to an external website that ${SITE.name} has not checked.</p>
@@ -321,8 +324,9 @@ export function goPage(c: ToolContext): Response {
 <p class="wrap-any"><code>${href}</code></p>
 <p class="muted">Addresses found in DNS, certificate logs or redirects can belong to internal, unfinished or unsafe
 systems. Only continue if you trust this site.</p>
-<div class="hero-actions"><a class="btn" href="${href}" rel="noopener noreferrer nofollow">Continue to ${host}</a>
-<button type="button" class="btn secondary" data-back>Go back</button></div>
+${fromSite ? html`<div class="hero-actions"><a class="btn" href="${href}" rel="noopener noreferrer nofollow">Continue to ${host}</a>
+<button type="button" class="btn secondary" data-back>Go back</button></div>` : html`<p class="hint">This page was not opened from a ${SITE.name} result, so it shows no link. If you trust the address, copy it into
+the address bar yourself.</p>`}
 <p class="hint">Check it first: <a href="/is-it-down?url=${encodeURIComponent(href)}">is it up?</a> ·
 <a href="/http-headers?url=${encodeURIComponent(href)}">HTTP headers</a> ·
 <a href="/whois?q=${encodeURIComponent(host)}">WHOIS</a></p>
