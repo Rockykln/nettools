@@ -18,7 +18,7 @@ const tool: Tool = {
   render() {
     return html`<form class="tool-form" id="mh-form" action="#">
 <div class="field grow"><label for="mh-input">Full email headers</label>
-<textarea id="mh-input" rows="10" required autocapitalize="off" autocomplete="off" spellcheck="false" placeholder="Received: from mail.example.com (mail.example.com [192.0.2.10]) by mx.example.net …"></textarea></div>
+<textarea id="mh-input" rows="10" maxlength="200000" required autocapitalize="off" autocomplete="off" spellcheck="false" placeholder="Received: from mail.example.com (mail.example.com [192.0.2.10]) by mx.example.net …"></textarea></div>
 <div class="field"><button type="submit">Analyze</button></div>
 </form>
 <p class="hint">Processed only in your browser. Nothing you paste is sent to our server.</p>

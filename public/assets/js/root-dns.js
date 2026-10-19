@@ -9,7 +9,7 @@
 
   const cell = (row, name) => row.querySelector(`[data-cell="${name}"]`);
   const set = (el, html) => { el.innerHTML = html; el.classList.remove('pending'); el.classList.add('updated'); };
-  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => `&#${c.charCodeAt(0)};`);
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 
   async function testRow(row) {
     const letter = row.dataset.root.toLowerCase();
@@ -26,7 +26,7 @@
       if (!res.ok) throw new Error(r.error || (res.status === 429 ? 'Too many requests, try again later' : `HTTP ${res.status}`));
       set(cell(row, 'status'), r.untestable ? `<span class="status info" title="${esc(r.error)}">Not testable</span>`
         : r.error ? `<span class="status bad" title="${esc(r.error)}">Failed</span>` : '<span class="status ok">OK</span>');
-      set(cell(row, 'query'), r.queryMs !== null ? (r.queryMs < 1 ? '&lt;1 ms' : `${esc(r.queryMs)} ms`) : '—');
+      set(cell(row, 'query'), r.queryMs != null ? (r.queryMs < 1 ? '&lt;1 ms' : `${esc(r.queryMs)} ms`) : '—');
       set(cell(row, 'instance'), `<code>${esc(r.instance ?? r.error ?? '—')}</code>`);
       return r;
     } catch (e) {

@@ -108,7 +108,8 @@
   });
 
   // "Copy as Markdown" under every result table, for tickets, chats and docs.
-  const cellText = (cell) => cell.textContent.replace(/\s+/g, ' ').trim().replace(/\|/g, '\\|');
+  // Cells hold third-party data (TXT records, headers); escape Markdown syntax so it cannot become links or images.
+  const cellText = (cell) => cell.textContent.replace(/\s+/g, ' ').trim().replace(/[\\|`*_[\]()!<>#~]/g, '\\$&');
   const toMarkdown = (table) => {
     const rows = [...table.querySelectorAll('tr')].map((tr) => [...tr.children].map(cellText));
     if (!rows.length) return '';

@@ -10,6 +10,8 @@
   // Unfold continuation lines and split into [name, value] pairs, in original order.
   // The header block ends at the first empty line; leading blank lines from copying are ignored.
   function parse(text) {
+    // Real header blocks are a few KB; a cap keeps crafted input from freezing the tab.
+    text = text.slice(0, 200000);
     const lines = text.replace(/\r\n?/g, '\n').replace(/^\s*\n/, '').split('\n');
     const end = lines.findIndex((l) => !l.trim());
     const unfolded = (end < 0 ? lines : lines.slice(0, end)).join('\n').replace(/\n[ \t]+/g, ' ');
@@ -78,7 +80,7 @@
     const from = at(/\bfrom\s+(\S+)/i);
     const by = at(/\bby\s+(\S+)/i);
     // The comment right after the "from" name holds the reverse DNS name and IP the receiver saw.
-    const seen = from && notes.find((n) => n.at >= from.end && (!by || n.at < by.end) && /\[(?:ipv6:)?[0-9a-f.:]+\]|\d+\.\d+\.\d+\.\d+|\b[0-9a-f]{1,4}(?::[0-9a-f]{0,4}){2,7}\b/i.test(n.text));
+    const seen = from && notes.find((n) => n.at >= from.end && (!by || n.at < by.end) && /\[(?:ipv6:)?[0-9a-f.:]+\]|\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b|\b[0-9a-f]{1,4}(?::[0-9a-f]{0,4}){2,7}\b/i.test(n.text));
     return {
       from: from ? `${from.word}${seen ? ` ${seen.text}` : ''}` : '',
       by: by ? by.word : '',
