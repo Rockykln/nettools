@@ -131,3 +131,11 @@ describe('helpers', () => {
     expect(await cachedJson('k', () => Infinity, async () => 42)).toBe(42);
   });
 });
+
+describe('scanner paths', () => {
+  it('short-circuits typical scanner probes only', async () => {
+    const { isScannerPath } = await import('../src/index');
+    for (const p of ['/wp-login.php', '/xmlrpc.php', '/.env', '/.git/config', '/phpmyadmin/', '/index.php', '/cgi-bin/x', '/backup.sql']) expect(isScannerPath(p)).toBe(true);
+    for (const p of ['/', '/whois', '/api/whois', '/assets/style.css', '/llms.txt', '/robots-txt', '/.well-known/security.txt', '/ip-lookup']) expect(isScannerPath(p)).toBe(false);
+  });
+});

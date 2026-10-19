@@ -167,8 +167,17 @@ function classify(c: ToolContext, status: number): { kind: EventKind; route: str
   return { kind: 'page', route: named[path] ?? 'not_found' };
 }
 
+// Paths only vulnerability scanners ask for (this site has no PHP, CMS or dotfiles). They get a bare 404 without
+// rendering the not-found page or recording metrics.
+const SCANNER_PATH = /\.(php\d?|aspx?|jsp|cgi|env|ini|sql|bak|git)(\/|$)|^\/(wp-|wordpress|xmlrpc|phpmyadmin|cgi-bin|\.git|\.env|\.aws|vendor\/|admin\/)/i;
+
+export function isScannerPath(path: string): boolean {
+  return SCANNER_PATH.test(path);
+}
+
 export default {
   async fetch(req, env, exec): Promise<Response> {
+    if (isScannerPath(new URL(req.url).pathname)) return new Response('Not found', { status: 404, headers: { 'content-type': 'text/plain', 'cache-control': 'public, max-age=86400' } });
     setDohByIp((env as { DOH_BY_IP?: string }).DOH_BY_IP === '1');
     const c: ToolContext = { req, env, exec, url: new URL(req.url), clientIp: clientIp(req) };
     const start = Date.now();
