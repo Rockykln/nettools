@@ -13,7 +13,6 @@ const MAX_BODY = 2 * 1024 * 1024;
 
 interface Run {
   tcpMs: number | null;
-  tlsMs: number | null;
   ttfbMs: number | null;
   totalMs: number | null;
   bytes: number;
@@ -51,13 +50,13 @@ async function httpRun(u: URL, tcpMs: number): Promise<Run> {
   const https = u.protocol === 'https:';
   const start = Date.now();
   const s = connect({ hostname: socketHost(bare(u.hostname)), port: Number(u.port) || (https ? 443 : 80) }, { secureTransport: https ? 'on' : 'off', allowHalfOpen: false });
-  const run: Run = { tcpMs, tlsMs: null, ttfbMs: null, totalMs: null, bytes: 0, status: null, error: null };
+  const run: Run = { tcpMs, ttfbMs: null, totalMs: null, bytes: 0, status: null, error: null };
   try {
     await withTimeout(s.opened, 8000);
     const opened = Date.now();
-    // TCP time comes from a separate connection just before; cap it so TCP + TLS add up to this connection's setup time.
+    // TCP time comes from a separate connection just before; cap it at this connection's setup time. The socket
+    // reports "opened" once TCP is up, so for HTTPS the TLS handshake is part of the time to first byte.
     run.tcpMs = Math.min(tcpMs, opened - start);
-    if (https) run.tlsMs = opened - start - run.tcpMs;
     const w = s.writable.getWriter();
     const path = u.pathname + u.search;
     await w.write(new TextEncoder().encode(`GET ${path} HTTP/1.1\r\nHost: ${u.host}\r\nUser-Agent: nettools/1.0 (+https://net.rockykln.com)\r\nAccept: */*\r\nAccept-Encoding: gzip, br\r\nConnection: close\r\n\r\n`));
@@ -87,7 +86,7 @@ async function httpRun(u: URL, tcpMs: number): Promise<Run> {
 
 // Fallback for sites on Cloudflare: time to response headers (connection included) and to the end of the body.
 async function fetchRun(url: string): Promise<Run> {
-  const run: Run = { tcpMs: null, tlsMs: null, ttfbMs: null, totalMs: null, bytes: 0, status: null, error: null };
+  const run: Run = { tcpMs: null, ttfbMs: null, totalMs: null, bytes: 0, status: null, error: null };
   const start = Date.now();
   try {
     const res = await fetch(url, {
@@ -132,7 +131,7 @@ async function measure(c: ToolContext, url: string): Promise<Report | { error: s
     try {
       tcp = await tcpTime(bare(u.hostname), port);
     } catch {
-      runs.push({ tcpMs: null, tlsMs: null, ttfbMs: null, totalMs: null, bytes: 0, status: null, error: 'TCP connection failed' });
+      runs.push({ tcpMs: null, ttfbMs: null, totalMs: null, bytes: 0, status: null, error: 'TCP connection failed' });
       continue;
     }
     runs.push(await httpRun(u, tcp));
@@ -148,12 +147,12 @@ const median = (xs: (number | null)[]): number | null => {
 };
 
 function waterfall(r: Report): SafeHtml {
-  const tcp = median(r.runs.map((x) => x.tcpMs)), tls = median(r.runs.map((x) => x.tlsMs)), ttfb = median(r.runs.map((x) => x.ttfbMs)), total = median(r.runs.map((x) => x.totalMs));
-  const download = total !== null && ttfb !== null ? Math.max(0, total - (tcp ?? 0) - (tls ?? 0) - ttfb) : null;
+  const tcp = median(r.runs.map((x) => x.tcpMs)), ttfb = median(r.runs.map((x) => x.ttfbMs)), total = median(r.runs.map((x) => x.totalMs));
+  const download = total !== null && ttfb !== null ? Math.max(0, total - (tcp ?? 0) - ttfb) : null;
   const phases: [string, number | null, string][] = [
     ['DNS lookup', r.dnsMs, 'dns'],
-    ...(r.cloudflare ? [] : [['TCP connect', tcp, 'tcp'], ...(r.https ? [['TLS handshake', tls, 'tls']] : [])] as [string, number | null, string][]),
-    [r.cloudflare ? 'Connect + first byte' : 'Time to first byte', ttfb, 'ttfb'], ['Download', download, 'dl'],
+    ...(r.cloudflare ? [] : [['TCP connect', tcp, 'tcp']] as [string, number | null, string][]),
+    [r.cloudflare ? 'Connect + first byte' : r.https ? 'TLS + first byte' : 'Time to first byte', ttfb, 'ttfb'], ['Download', download, 'dl'],
   ];
   const sum = phases.reduce((a, [, v]) => a + (v ?? 0), 0) || 1;
   let offset = 0;
@@ -185,7 +184,7 @@ const tool: Tool = {
   icon: 'ttfb',
   category: 'performance',
   title: 'Website Response Time Test – DNS, TLS & TTFB',
-  description: 'Measure how fast a website responds: DNS lookup, TCP connect, TLS handshake, time to first byte and download time, averaged over three fresh connections.',
+  description: 'Measure how fast a website responds: DNS lookup, TCP connect, TLS and time to first byte, and download time, as the median of three fresh connections.',
   h1: 'Website response time test',
   lead: 'Break down how long a website takes to answer: DNS, connection, TLS handshake and time to first byte.',
   heavy: () => true,
@@ -205,8 +204,8 @@ const tool: Tool = {
 <p class="result-head">Median of ${RUNS} fresh connections to <code>${r.host}</code> from Cloudflare <strong>${colo(c)}</strong>${ok[0]?.status ? html` · <code>${ok[0].status}</code>` : ''}</p>
 ${r.cloudflare ? html`<p class="hint">${r.host} is served by Cloudflare, which cannot be reached with raw TCP connections from here. The runs use regular HTTPS requests, so connection setup and time to first byte are measured together; the first run includes the connection, later runs may reuse it.</p>` : ''}
 ${ok.length ? waterfall(r) : html`<p class="error">${r.runs[0]?.error ?? 'No response.'}</p>`}
-<div class="table-scroll" tabindex="0" role="region" aria-label="Results table"><table class="data num"><thead><tr><th>Run</th><th>TCP</th>${r.https ? html`<th>TLS</th>` : ''}<th>TTFB</th><th>Total</th><th>Received</th><th>Result</th></tr></thead>
-<tbody>${r.runs.map((x, i) => html`<tr><td>${i + 1}</td><td>${x.tcpMs ?? '—'}${x.tcpMs !== null ? ' ms' : ''}</td>${r.https ? html`<td>${x.tlsMs ?? '—'}${x.tlsMs !== null ? ' ms' : ''}</td>` : ''}<td>${x.ttfbMs ?? '—'}${x.ttfbMs !== null ? ' ms' : ''}</td><td>${x.totalMs ?? '—'}${x.totalMs !== null ? ' ms' : ''}</td><td>${x.bytes ? `${(x.bytes / 1024).toFixed(1)} KB` : '—'}</td><td>${x.error ? html`<span class="status bad">${x.error}</span>` : html`<span class="status ok">OK</span>`}</td></tr>`)}</tbody></table></div>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Results table"><table class="data num"><thead><tr><th>Run</th><th>TCP</th><th>${r.https ? 'TLS + TTFB' : 'TTFB'}</th><th>Total</th><th>Received</th><th>Result</th></tr></thead>
+<tbody>${r.runs.map((x, i) => html`<tr><td>${i + 1}</td><td>${x.tcpMs ?? '—'}${x.tcpMs !== null ? ' ms' : ''}</td><td>${x.ttfbMs ?? '—'}${x.ttfbMs !== null ? ' ms' : ''}</td><td>${x.totalMs ?? '—'}${x.totalMs !== null ? ' ms' : ''}</td><td>${x.bytes ? `${(x.bytes / 1024).toFixed(1)} KB` : '—'}</td><td>${x.error ? html`<span class="status bad">${x.error}</span>` : html`<span class="status ok">OK</span>`}</td></tr>`)}</tbody></table></div>
 <p class="hint">Measured from Cloudflare's network, not from your device. Redirects are not followed; check them with the <a href="/http-headers?url=${encodeURIComponent(url)}">HTTP header checker</a>.</p>`;
   },
 
@@ -237,23 +236,25 @@ first byte as one value.</p>
 <table class="data"><thead><tr><th>Phase</th><th>What happens</th><th>Typical</th></tr></thead><tbody>
 <tr><td>DNS lookup</td><td>The host name is resolved to an IP address.</td><td>1–50 ms when cached, up to a few hundred ms otherwise</td></tr>
 <tr><td>TCP connect</td><td>The three-way handshake; roughly one round trip to the server.</td><td>1–20 ms nearby, 80–200 ms across continents</td></tr>
-<tr><td>TLS handshake</td><td>Certificates and keys are exchanged; one round trip with TLS 1.3, two with TLS 1.2.</td><td>about one to two times the TCP time</td></tr>
-<tr><td>Time to first byte</td><td>The request travels to the server, the server builds the response and the first byte comes back.</td><td>under 200 ms is good, over 600 ms is slow</td></tr>
+<tr><td>TLS + first byte</td><td>For HTTPS: certificates and keys are exchanged (one round trip with TLS 1.3, two with TLS 1.2), then the request travels to the server, the server builds the response and the first byte comes back.</td><td>under 250 ms is good, over 700 ms is slow</td></tr>
+<tr><td>Time to first byte</td><td>For plain HTTP: the request travels to the server, the server builds the response and the first byte comes back.</td><td>under 200 ms is good, over 600 ms is slow</td></tr>
 <tr><td>Download</td><td>The rest of the response arrives.</td><td>depends on page size and compression</td></tr>
 </tbody></table>
-<p>Time to first byte here is counted from the moment the request is sent, so it contains one network round trip plus
-the server's processing time. Subtract the TCP connect time from it to estimate how long the server itself worked on
-the request. The request asks for gzip or Brotli compression, so the received size is usually the compressed size.</p>
+<p>Time to first byte here is counted from the moment the connection is open, so it contains one network round trip
+plus the server's processing time, and for HTTPS also the TLS handshake. The socket API of Cloudflare Workers does not
+report when the handshake ends, so the two cannot be shown separately. Subtract the TCP connect time about twice (TLS 1.3) or
+three times (TLS 1.2) to estimate how long the server itself worked on the request. The request asks for gzip or Brotli compression, so the received size is usually the compressed size.</p>
 
 <h2>How to read the result</h2>
 <p>The phases point to different causes, so look at which one dominates.</p>
 <ul>
-<li><strong>TCP connect is high:</strong> the server is far away from the test location or the path is congested. The TLS
-handshake then grows with it, because it needs the same round trips. A CDN or a server closer to your visitors helps;
-faster code does not.</li>
-<li><strong>TLS is much slower than TCP:</strong> the server may only offer TLS 1.2, send a long certificate chain, or be
-short on CPU. Check the certificate setup with the <a href="/ssl-check">SSL certificate check</a>.</li>
-<li><strong>TTFB is high, TCP and TLS are fast:</strong> the server itself is slow. Typical causes are application code,
+<li><strong>TCP connect is high:</strong> the server is far away from the test location or the path is congested. TLS
+and the first byte then grow with it, because they need the same round trips. A CDN or a server closer to your visitors
+helps; faster code does not.</li>
+<li><strong>TLS + first byte is high although TCP is fast:</strong> either the handshake is slow (only TLS 1.2, a long
+certificate chain, a server short on CPU; check it with the <a href="/ssl-check">SSL certificate check</a>) or the
+server itself is slow, see the next point. Comparing with <code>curl -w</code> below separates the two.</li>
+<li><strong>First byte is high, TCP is fast:</strong> the server itself is slow. Typical causes are application code,
 slow database queries, calls to external APIs during the request, an exhausted worker pool (PHP-FPM, application server
 threads) or a page cache that is missing or bypassed.</li>
 <li><strong>Download is high:</strong> the response is large or uncompressed, or the server streams it slowly. Check the
