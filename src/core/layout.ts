@@ -39,7 +39,7 @@ function footer(): SafeHtml {
     return html`<div class="footer-col"><p class="footer-h">${cat.name}</p><ul>${tools.map((t) => html`<li><a href="/${t.slug}">${t.name}</a></li>`)}</ul></div>`;
   })}</div>
 </div>
-<div class="footer-meta"><span>© ${new Date().getUTCFullYear()} · Operated by <a href="${SITE.authorGithub}" rel="noopener author">${SITE.author}</a> · Made in Germany</span>
+<div class="footer-meta"><span>© ${new Date().getUTCFullYear()} · Operated by <a href="${SITE.authorGithub}" rel="noopener author">${SITE.author}</a> · Made in Germany</span>
 <span><a href="${SITE.license.url}" rel="noopener license">${SITE.license.name} License</a> · <a href="${SITE.github}" rel="noopener">GitHub</a> · <a href="/llms.txt">llms.txt</a> · <a href="/legal">Legal notice &amp; privacy</a></span></div>
 </div></footer>`;
 }

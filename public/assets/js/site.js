@@ -137,7 +137,7 @@
 
   // Narrow screens: tables that would scroll sideways are shown as one block per row,
   // each value labelled with its column header (labels come from the table head).
-  const narrow = matchMedia('(max-width: 760px)');
+  const narrow = matchMedia('(max-width: 900px)');
   const labelCells = (table) => {
     const heads = [...table.querySelectorAll('thead th')].map((th) => th.textContent.trim());
     if (!heads.length) return false;

@@ -9,7 +9,7 @@ export const SITE = {
   github: 'https://github.com/Rockykln/nettools',
   license: { name: 'MIT', url: 'https://github.com/Rockykln/nettools/blob/main/LICENSE' },
   /** Bump when public/assets change so browsers fetch the new files. */
-  assetVersion: '41',
+  assetVersion: '42',
   /** Last content update, used as <lastmod> in the sitemap. */
   updated: '2026-10-15',
   operator: {

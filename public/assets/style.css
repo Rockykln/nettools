@@ -193,7 +193,7 @@ input[type="text"]:focus, select:focus, textarea:focus { outline: 2px solid tran
 .error { color: var(--bad); font-weight: 500; }
 .hint { font-size: 14px; color: var(--muted); margin-bottom: 0; }
 
-.status { display: inline-block; font-size: 11px; font-weight: 700; padding: 1px 7px; border-radius: 4px; line-height: 18px; text-transform: uppercase; letter-spacing: .04em; white-space: nowrap; }
+.status { display: inline-block; font-size: 12px; font-weight: 700; padding: 1px 7px; border-radius: 4px; line-height: 18px; text-transform: uppercase; letter-spacing: .04em; white-space: nowrap; }
 .status.ok { color: var(--ok); background: var(--ok-bg); }
 .status.bad { color: var(--bad); background: var(--bad-bg); }
 .status.warn { color: var(--warn); background: var(--warn-bg); }
@@ -205,6 +205,13 @@ input[type="text"]:focus, select:focus, textarea:focus { outline: 2px solid tran
 .article .data td { white-space: normal; overflow-wrap: break-word; }
 .article .data td:first-child { white-space: nowrap; }
 .article code, .faq code { overflow-wrap: anywhere; }
+/* Command examples keep one command per line and scroll instead of wrapping into what looks like a new command. */
+.article pre.raw { white-space: pre; overflow-wrap: normal; }
+@media (max-width: 640px) {
+  /* Wide enough cells that site.js stacks explanation tables on phones instead of squeezing three columns. */
+  .article .data td { min-width: 7rem; }
+  .prefix-list { font-size: 13px; line-height: 1.9; }
+}
 @media (min-width: 1100px) {
   .below-tool { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); }
   .below-tool .article, .below-tool .faq { max-width: none; }
@@ -228,6 +235,7 @@ table { border-collapse: collapse; width: 100%; font-size: 15px; }
 .data.stack td { display: block; position: relative; padding: 3px 4px 3px calc(34% + 10px); border: 0; white-space: normal; overflow-wrap: anywhere; min-width: 0; min-height: 1.6em; }
 .data.stack td::before { content: attr(data-label); position: absolute; left: 4px; top: 5px; width: 34%; color: var(--muted); font-size: 13px; line-height: 1.4; overflow-wrap: anywhere; }
 .data.stack td[data-label=""] { padding-left: 4px; }
+.data.stack td:empty { display: none; }
 .data.stack td[data-label=""]::before { content: none; }
 .data.stack td.bar-cell { padding-top: 6px; }
 .data.stack.pairs td { padding-left: 4px; }
@@ -240,7 +248,7 @@ table { border-collapse: collapse; width: 100%; font-size: 15px; }
 .kv th { width: 15rem; font-weight: 500; color: var(--muted); }
 .kv td { color: var(--ink); overflow-wrap: anywhere; }
 .spf-tree code, .tool h3 code { overflow-wrap: anywhere; }
-.tool-form + .kv, .tool-form + table, .hint + .kv { margin-top: 20px; }
+.tool-form + .kv, .tool-form + table, .tool-form + .table-scroll, .hint + .kv { margin-top: 20px; }
 .kv.compact { margin-top: 24px; font-size: 14px; }
 .wrap-any { overflow-wrap: anywhere; }
 .pre-line { white-space: pre-line; overflow-wrap: anywhere; }
@@ -278,7 +286,7 @@ pre.raw { background: var(--bg-soft); border: 1px solid var(--line); border-radi
 /* Two-column lists (ASN neighbours) and prefix lists */
 .two-col { display: grid; gap: 0 40px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr)); }
 ul.plain { list-style: none; padding: 0; margin: 0; columns: 2; }
-ul.plain li { margin: 4px 0; }
+ul.plain li { margin: 0; padding: 4px 0; break-inside: avoid; }
 .prefix-list { line-height: 2; }
 .prefix-list a { margin-right: 10px; text-decoration: none; }
 
@@ -302,7 +310,7 @@ ul.plain li { margin: 4px 0; }
 
 /* Bars (SVG) */
 .hbar { display: block; min-width: 80px; }
-.hbar-track { fill: var(--bg-soft); }
+.hbar-track { fill: var(--line); }
 .hbar-fill { fill: var(--brand); }
 .hbar-fill.dns { fill: #8B5CF6; } .hbar-fill.tcp { fill: #F59E0B; } .hbar-fill.tls { fill: #EC4899; }
 .hbar-fill.ttfb { fill: var(--brand); } .hbar-fill.dl { fill: #10B981; } .hbar-fill.slow { fill: var(--bad); }
@@ -364,6 +372,9 @@ ul.plain li { margin: 4px 0; }
 .hero h1 { font-size: clamp(36px, 5vw, 64px); line-height: 1.05; margin-bottom: 18px; font-weight: 800; letter-spacing: -.03em; }
 .hero h1 em { font-style: normal; color: #1287E0; }
 :root[data-theme="dark"] .hero h1 em { color: var(--brand); }
+/* The terminal block is dark in both themes; on the dark page it needs a darker shade to stand out. */
+:root[data-theme="dark"] .terminal { background: #050912; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .terminal { background: #050912; } }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .hero h1 em { color: var(--brand); } }
 .hero .lead { font-size: clamp(18px, 1.6vw, 22px); color: #556274; }
 :root[data-theme="dark"] .hero .lead { color: var(--muted); }
@@ -456,6 +467,7 @@ ul.plain li { margin: 4px 0; }
 .footer-col .footer-h { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--footer-fg); margin: 6px 0 12px; }
 .footer-col ul { list-style: none; margin: 0; padding: 0; }
 .footer-col li { margin: 6px 0; }
+.footer-meta a { display: inline-block; padding: 4px 0; white-space: nowrap; }
 .footer-meta { margin: 40px 0 0; padding-top: 20px; border-top: 1px solid var(--footer-line); display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: space-between; font-size: 14px; }
 
 /* ---------- Small screens / high zoom ---------- */

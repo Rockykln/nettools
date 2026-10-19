@@ -1,4 +1,4 @@
-import { html, type SafeHtml } from '../core/html';
+import { esc, html, raw, type SafeHtml } from '../core/html';
 import { json } from '../core/http';
 import { binary, classify, formatCount, hostRange, netmask, parseSubnet, size, split, toIp, wildcard, type Subnet } from '../core/subnet';
 import type { Tool } from '../core/tool';
@@ -25,6 +25,9 @@ function details(s: Subnet): [string, string, boolean?][] {
   if (s.input !== s.network) rows.push(['You entered', toIp(s.input, v), true]);
   return rows;
 }
+
+// IPv6 addresses wrap after a colon instead of in the middle of a group.
+const breakable = (s: string): SafeHtml => raw(esc(s).replace(/:/g, ':<wbr>').replace(/ – /g, ' –<wbr> '));
 
 function form(value: string, splitTo: string): SafeHtml {
   return html`<form class="tool-form" method="get" action="/subnet-calculator">
@@ -69,14 +72,14 @@ const tool: Tool = {
     const parts = to !== null ? split(s, to, 256) : null;
     return html`${form(value, splitRaw)}
 ${bare ? html`<p class="hint">No prefix given, so /${s.prefix} was assumed.${guess ? html` Did you mean <a href="/subnet-calculator?cidr=${encodeURIComponent(guess)}">${guess}</a>?` : ''}</p>` : ''}
-<table class="kv"><tbody>${details(s).map(([k, v, mono]) => html`<tr><th scope="row">${k}</th><td>${mono ? html`<code>${v}</code>` : v}</td></tr>`)}</tbody></table>
+<table class="kv"><tbody>${details(s).map(([k, v, mono]) => html`<tr><th scope="row">${k}</th><td>${mono ? html`<code>${breakable(String(v))}</code>` : v}</td></tr>`)}</tbody></table>
 ${parts && parts.blocks.length
       ? html`<h2>${formatCount(parts.total)} subnets of /${to}</h2>
 ${parts.total > BigInt(parts.blocks.length) ? html`<p class="muted">Showing the first ${parts.blocks.length}.</p>` : ''}
 <div class="table-scroll" tabindex="0" role="region" aria-label="Results table"><table class="data"><thead><tr><th>#</th><th>Network</th><th>Usable hosts</th><th>${s.version === 4 ? 'Broadcast' : 'Last address'}</th></tr></thead>
 <tbody>${parts.blocks.map((b, i) => {
           const h = hostRange(b);
-          return html`<tr><td>${i + 1}</td><td><code>${toIp(b.network, b.version)}/${b.prefix}</code></td><td><code>${toIp(h.first, b.version)} – ${toIp(h.last, b.version)}</code></td><td><code>${toIp(b.last, b.version)}</code></td></tr>`;
+          return html`<tr><td>${i + 1}</td><td><code>${breakable(`${toIp(b.network, b.version)}/${b.prefix}`)}</code></td><td><code>${breakable(`${toIp(h.first, b.version)} – ${toIp(h.last, b.version)}`)}</code></td><td><code>${breakable(toIp(b.last, b.version))}</code></td></tr>`;
         })}</tbody></table></div>`
       : splitRaw ? html`<p class="error">${s.prefix >= (s.version === 4 ? 32 : 128) ? 'A single address cannot be split.' : splitError(s)}</p>` : ''}`;
   },
