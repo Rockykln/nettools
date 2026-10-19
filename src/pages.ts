@@ -111,7 +111,7 @@ ${ipHero(info, true)}
 
 <section class="section" id="tools"><div class="wrap">
 <h2 class="section-title">All tools</h2>
-<p class="section-intro">Results render on the server, so they work without JavaScript and every result has a link you can share.</p>
+<p class="section-intro">Most results render on the server, so they work without JavaScript and every result has a link you can share.</p>
 ${CATEGORIES.map((cat) => {
     const tools = TOOLS.filter((t) => t.category === cat.id);
     return tools.length ? html`<h3 class="cat-title" id="${cat.id}">${cat.name} <span class="cat-count">${tools.length}</span></h3>${toolCards(tools, false)}` : '';
@@ -157,7 +157,7 @@ ${CATEGORIES.map((cat) => {
 export function legalPage(c: ToolContext): Response {
   const o = SITE.operator;
   // "OpenDNS (Cisco)" already carries parentheses; the location is added inside them, not as a second pair.
-  const resolvers = RESOLVERS.map((r) => (r.name.endsWith(')') ? `${r.name.slice(0, -1)}, ${r.location.toLowerCase()})` : `${r.name} (${r.location.toLowerCase()})`)).join(', ');
+  const resolvers = RESOLVERS.map((r) => (r.name.endsWith(')') ? `${r.name.slice(0, -1)}, ${r.location.replace(/^Global/, 'global')})` : `${r.name} (${r.location.replace(/^Global/, 'global')})`)).join(', ');
   const summary: [string, string][] = [
     ['Cookies', 'None. Only your light/dark choice is kept in your browser’s local storage.'],
     ['Advertising', 'None.'],
@@ -343,7 +343,7 @@ export function apiPage(c: ToolContext): Response {
 <li>All endpoints answer <code>GET</code> requests with JSON (<code>application/json</code>). Errors return a JSON object
 with an <code>error</code> field and an HTTP status of 400 (invalid input), 403 (cross-site browser requests), 404 (nothing found, e.g. no RDAP record), 405 (wrong method), 429, 502 or 503.</li>
 <li>Rate limits per IP address (per /64 for IPv6): 30 requests per minute; port checks of other hosts, TCP ping, DNSSEC, certificate, social preview, robots.txt, response time,
-DNS benchmark, blocklist, subdomain, email, domain availability, compare-all DNS queries, the full root server test, range-to-CIDR with more than 20 entries
+DNS benchmark, blocklist, IP lookup, subdomain, email, domain availability, compare-all DNS queries, the full root server test, range-to-CIDR with more than 20 entries
 and uncached badges additionally 10 per minute; single root server tests allow 30 and the speed test 600 requests per minute. Over the limit you get
 HTTP 429; wait a minute.</li>
 <li>Please keep automated use moderate. For monitoring many domains, run your own copy from the

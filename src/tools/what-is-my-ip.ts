@@ -92,7 +92,7 @@ const tool: Tool = {
   h1: 'What is my IP address?',
   lead: 'Your public IP address as the internet sees it, with ISP, reverse DNS and connection details.',
   personal: true,
-  related: ['whois', 'dns-lookup', 'speed-test'],
+  related: ['ip-lookup', 'whois', 'speed-test'],
 
   async render(c) {
     const info = await ipInfo(c);
@@ -109,7 +109,7 @@ const tool: Tool = {
 <tr><th scope="row">TLS</th><td>${dash([info.tlsVersion, info.tlsCipher].filter(Boolean).join(' · '))}</td></tr>
 <tr><th scope="row">TCP round-trip time</th><td>${info.tcpRttMs ? `${info.tcpRttMs} ms` : '—'}</td></tr>
 <tr><th scope="row">Served by data center</th><td>${dash(info.colo)}</td></tr>
-<tr><th scope="row">Next steps</th><td><a href="/port-checker?preset=web" rel="nofollow">Check open ports on this IP</a> · <a href="/ip-lookup?q=${encodeURIComponent(info.ip)}" rel="nofollow">owner and blocklists</a> · <a href="/speed-test">speed test</a></td></tr>
+<tr><th scope="row">Next steps</th><td><a href="/port-checker?preset=web" rel="nofollow">Open ports</a> · <a href="/ip-lookup?q=${encodeURIComponent(info.ip)}" rel="nofollow">Owner and blocklists</a> · <a href="/speed-test">Speed test</a></td></tr>
 <tr><th scope="row">User agent</th><td class="wrap-any"><code>${dash(info.userAgent)}</code></td></tr>
 </tbody>
 </table>`;
@@ -212,8 +212,10 @@ within a few weeks.</li>
 </ul>
 
 <h2>How this page works</h2>
-<p>The address is read from your connection to this server. The reverse DNS name is looked up live, everything else
-comes from the connection metadata. Nothing is stored.</p>`,
+<p>The address is read from your connection to this server. The reverse DNS name is looked up live; provider, ASN
+and approximate location come from the metadata Cloudflare attaches to the connection. This site stores nothing beyond
+Cloudflare’s short-lived technical logs (see the <a href="/legal">legal notice</a>). For the registry owner, abuse
+contact and blocklist status of any address, use the <a href="/ip-lookup">IP lookup</a>.</p>`,
 
   faq: [
     {

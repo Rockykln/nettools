@@ -44,7 +44,8 @@ export interface PrefixReport {
 }
 
 async function asReport(asn: number): Promise<AsReport> {
-  return cachedJson(`asn:${asn}`, () => 3600, async () => {
+  // Large networks return about 1 MB of JSON that takes several ms of CPU to parse; routing changes slowly.
+  return cachedJson(`asn:${asn}`, () => 6 * 3600, async () => {
     const [overview, prefixes, neighbours] = await Promise.all([
       ripestat<{ holder?: string; announced?: boolean }>('as-overview', `AS${asn}`),
       ripestat<{ prefixes: { prefix: string }[] }>('announced-prefixes', `AS${asn}`),
@@ -66,7 +67,7 @@ async function asReport(asn: number): Promise<AsReport> {
 }
 
 export async function prefixReport(resource: string): Promise<PrefixReport> {
-  return cachedJson(`prefix:${resource}`, () => 3600, async () => {
+  return cachedJson(`prefix:${resource}`, () => 6 * 3600, async () => {
     const d = await ripestat<{ resource: string; asns: { asn: number; holder: string }[]; announced: boolean }>('prefix-overview', resource);
     return { query: resource, prefix: d.resource ?? resource, origins: (d.asns ?? []).map((a) => ({ asn: a.asn, holder: a.holder ?? '' })), announced: !!d.announced };
   });
@@ -143,7 +144,7 @@ const tool: Tool = {
   h1: 'ASN and BGP lookup',
   lead: 'Which network an IP belongs to, which prefixes an AS announces, and who its upstreams are.',
   examples: [['AS13335', 'q=AS13335'], ['1.1.1.1', 'q=1.1.1.1'], ['AS3320', 'q=AS3320']],
-  related: ['whois', 'what-is-my-ip', 'ip-range-to-cidr'],
+  related: ['ip-lookup', 'whois', 'ip-range-to-cidr'],
   isQuery: (url) => url.searchParams.has('q'),
 
   async render(c) {

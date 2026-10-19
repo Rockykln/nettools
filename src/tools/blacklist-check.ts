@@ -24,9 +24,7 @@ const LISTS: Dnsbl[] = [
   { zone: 'dnsbl-2.uceprotect.net', name: 'UCEPROTECT Level 2', url: 'https://www.uceprotect.net/en/rblcheck.php' },
   { zone: 'bl.mailspike.net', name: 'Mailspike', url: 'https://mailspike.org/' },
   { zone: 'dnsbl.dronebl.org', name: 'DroneBL', url: 'https://dronebl.org/lookup' },
-  { zone: 'ix.dnsbl.manitu.net', name: 'NiX Spam', url: 'https://www.dnsbl.manitu.net/' },
   { zone: 'truncate.gbudb.net', name: 'GBUdb Truncate', url: 'https://www.gbudb.com/' },
-  { zone: 'db.wpbl.info', name: 'WPBL', url: 'http://www.wpbl.info/' },
   { zone: 'all.s5h.net', name: 's5h.net', url: 'https://www.usenix.org.uk/content/rbl.html' },
 ];
 
@@ -135,11 +133,11 @@ const tool: Tool = {
   category: 'email',
   title: 'Email Blacklist Check – Is My IP or Domain Listed?',
   description:
-    'Check whether an IP or a domain’s mail server is listed on 12 spam blocklists (DNSBL) such as SpamCop, Barracuda and UCEPROTECT, with removal links.',
+    'Check whether an IP or a domain’s mail server is listed on 10 spam blocklists (DNSBL) such as SpamCop, Barracuda and UCEPROTECT, with removal links.',
   h1: 'IP and mail server blacklist check',
   lead: 'Find out whether a mail server is listed on common spam blocklists and where to request removal.',
   examples: [['gmail.com mail server', 'q=gmail.com']],
-  related: ['email-security', 'whois', 'dns-lookup'],
+  related: ['email-security', 'ip-lookup', 'whois', 'dns-lookup'],
   heavy: () => true,
   isQuery: (url) => url.searchParams.has('q'),
 
@@ -205,8 +203,9 @@ record at the same name that explains the reason and links to the removal page:
 not listings. This tool reports them as "unavailable" instead of "listed".</p>
 
 <h2>Which lists this tool checks</h2>
-<p>The check queries 12 blocklists in parallel: Spamhaus ZEN, Barracuda, SpamCop, PSBL, UCEPROTECT Level 1 and Level 2,
-Mailspike, DroneBL, NiX Spam, GBUdb Truncate, WPBL and s5h.net. Each result links to the list's own lookup and removal page.</p>
+<p>The check queries 10 blocklists in parallel: Spamhaus ZEN, Barracuda, SpamCop, PSBL, UCEPROTECT Level 1 and Level 2,
+Mailspike, DroneBL, GBUdb Truncate and s5h.net. Spamhaus refuses queries that arrive through large public resolvers and
+then shows as unavailable. Each result links to the list's own lookup and removal page.</p>
 <ul>
 <li>Only IPv4 addresses are checked. Most blocklists publish little or no IPv6 data.</li>
 <li>If you enter a domain such as <code>example.com</code>, the tool looks up its MX records, takes the primary mail host

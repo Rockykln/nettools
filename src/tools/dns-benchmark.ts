@@ -161,7 +161,7 @@ measurements vary:</p>
 done</pre>
 <p>This uses plain DNS on port 53. To test the encrypted transports, BIND 9.18 and later accept <code>+tls</code> and
 <code>+https</code>, and <code>kdig</code> from Knot DNS does the same. Pick a domain that you actually use and one that
-is rarely visited, so you see both cached and uncached behaviour. On Windows, GRC's DNS Benchmark runs a longer series
+is rarely visited, so you see both cached and uncached behavior. On Windows, GRC's DNS Benchmark runs a longer series
 of tests against many resolvers, including the one your router hands out. Older tools such as namebench are no longer
 maintained.</p>
 

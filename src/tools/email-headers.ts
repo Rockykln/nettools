@@ -29,7 +29,7 @@ const tool: Tool = {
   article: html`<h2>What the analyzer shows</h2>
 <p>Paste the complete header block of a message and the analyzer lists the key fields (From, To, Subject, Date,
 Return-Path and Message-ID), the SPF, DKIM and DMARC results recorded by the receiving server, and every
-<code>Received</code> hop in the order the message travelled, with the delay between hops and the total transit time.
+<code>Received</code> hop in the order the message traveled, with the delay between hops and the total transit time.
 Hops that took longer than a minute are highlighted.</p>
 <p>The parsing runs in your browser. Nothing you paste is sent to our server, which matters because headers contain
 real addresses, host names and IP addresses.</p>

@@ -61,6 +61,7 @@ export function withSecurityHeaders(res: Response): Response {
   // /go sends no referrer, so external sites never see which lookup a visitor came from.
   if (!h.has('referrer-policy')) h.set('referrer-policy', 'strict-origin-when-cross-origin');
   h.set('permissions-policy', 'camera=(), microphone=(), geolocation=(), browsing-topics=()');
-  h.set('strict-transport-security', 'max-age=31536000');
+  h.set('strict-transport-security', 'max-age=31536000; includeSubDomains');
+  h.set('cross-origin-opener-policy', 'same-origin');
   return out;
 }

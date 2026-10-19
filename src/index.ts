@@ -140,6 +140,7 @@ async function route(c: ToolContext): Promise<Response> {
   }
   if (tool.isQuery?.(url)) {
     if (crossSiteSubresource(req)) return text('Cross-site requests are not allowed', { status: 403 });
+    if (isCrawler(req.headers.get('user-agent'))) return text('Result pages are not for crawlers; see /robots.txt.', { status: 403 });
     const key = rateKey(c.clientIp);
     if (!(await allow(env.RL_TOOLS, key))) return rateLimitedPage(c);
     if (tool.heavy?.(url, c) && !(await allow(env.RL_HEAVY, key))) return rateLimitedPage(c);
@@ -165,6 +166,15 @@ function classify(c: ToolContext, status: number): { kind: EventKind; route: str
   if (tool) return { kind: tool.isQuery?.(c.url) ? 'query' : 'page', route: tool.slug };
   const named: Record<string, string> = { '/': 'home', '/ip': 'ip', '/legal': 'legal', '/go': 'go', '/api': 'api-docs' };
   return { kind: 'page', route: named[path] ?? 'not_found' };
+}
+
+// Search and AI crawlers that ignore robots.txt would otherwise run lookups (outbound requests, CPU) on every
+// result link they find. Link preview bots stay allowed, so shared result links still get a preview.
+const CRAWLER_UA = /bot|crawl|spider|slurp|scrapy|python-requests|go-http-client|curl-impersonate/i;
+const PREVIEW_UA = /discordbot|twitterbot|slackbot|telegrambot|whatsapp|facebookexternalhit|linkedinbot|mastodon|bluesky|skypeuripreview|redditbot|applebot/i;
+
+export function isCrawler(ua: string | null): boolean {
+  return !!ua && CRAWLER_UA.test(ua) && !PREVIEW_UA.test(ua);
 }
 
 // Paths only vulnerability scanners ask for (this site has no PHP, CMS or dotfiles). They get a bare 404 without

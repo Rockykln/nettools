@@ -1,7 +1,7 @@
 {
   "name": "nettools \u2013 free network tools",
   "short_name": "nettools",
-  "description": "Fast, ad-free network tools: what is my IP, speed test, DNS lookup, root DNS servers and WHOIS.",
+  "description": "Fast, ad-free network tools for IP addresses, DNS, domains and WHOIS, websites, email security and performance.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

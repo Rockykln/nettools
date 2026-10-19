@@ -336,7 +336,7 @@ const tool: Tool = {
   h1: 'WHOIS lookup',
   lead: 'Find out who a domain, IP address or autonomous system is registered to.',
   examples: [['example.com', 'q=example.com'], ['8.8.8.8', 'q=8.8.8.8'], ['AS13335', 'q=AS13335']],
-  related: ['ip-whois-lookup', 'domain-availability', 'asn-lookup', 'ns-lookup'],
+  related: ['ip-lookup', 'domain-availability', 'asn-lookup', 'ns-lookup'],
   isQuery: (url) => url.searchParams.has('q') || url.searchParams.has('name'),
 
   async render(c) {

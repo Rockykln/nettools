@@ -278,7 +278,7 @@ DuckDuckGo, among others, and California treats it as a valid request to opt out
 
 <h2>Changing your user agent</h2>
 <ul>
-<li><strong>Chrome and Edge:</strong> DevTools, More tools, Network conditions, then untick "Use browser default".
+<li><strong>Chrome and Edge:</strong> DevTools, More tools, Network conditions, then uncheck "Use browser default".
 Device emulation (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>M</kbd>) also switches to a mobile string.</li>
 <li><strong>Firefox:</strong> Responsive Design Mode lets you set a custom user agent.</li>
 <li><strong>Command line:</strong> <code>curl -A "Mozilla/5.0 ..." https://example.com</code> or

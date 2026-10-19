@@ -139,3 +139,17 @@ describe('scanner paths', () => {
     for (const p of ['/', '/whois', '/api/whois', '/assets/style.css', '/llms.txt', '/robots-txt', '/.well-known/security.txt', '/ip-lookup']) expect(isScannerPath(p)).toBe(false);
   });
 });
+
+describe('crawler detection', () => {
+  it('blocks crawlers but not link preview bots or browsers', async () => {
+    const { isCrawler } = await import('../src/index');
+    expect(isCrawler('Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; Claude-SearchBot/1.0; +searchbot@anthropic.com)')).toBe(true);
+    expect(isCrawler('Mozilla/5.0 (compatible; MJ12bot/v1.4.8; http://mj12bot.com/)')).toBe(true);
+    expect(isCrawler('Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)')).toBe(true);
+    expect(isCrawler('Mozilla/5.0 (compatible; Discordbot/2.0; +https://discordapp.com)')).toBe(false);
+    expect(isCrawler('Twitterbot/1.0')).toBe(false);
+    expect(isCrawler('Mozilla/5.0 (X11; Linux x86_64; rv:140.0) Gecko/20100101 Firefox/140.0')).toBe(false);
+    expect(isCrawler('curl/8.9.1')).toBe(false);
+    expect(isCrawler(null)).toBe(false);
+  });
+});

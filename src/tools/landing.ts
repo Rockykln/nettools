@@ -1004,7 +1004,7 @@ const ipWhois = landing(whois, {
   lead: 'Find the organization that holds an IP address and where to report abuse from it.',
   defaults: {},
   examples: [['8.8.8.8', 'q=8.8.8.8'], ['9.9.9.9', 'q=9.9.9.9']],
-  related: ['whois', 'asn-lookup', 'reverse-dns-lookup'],
+  related: ['ip-lookup', 'whois', 'asn-lookup'],
   article: html`<h2>Who owns an IP address</h2>
 <p>Every public IP address belongs to a block registered with one of five regional internet registries (RIRs). Their
 databases record which organization holds the block, how it is used and whom to contact about abuse. An IP WHOIS

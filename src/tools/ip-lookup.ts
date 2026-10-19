@@ -166,7 +166,7 @@ about an address seen in a log file, a firewall alert or a mail header:</p>
 <tr><td>Country</td><td>DB-IP Lite database</td><td>The country where the address is most likely used.</td></tr>
 <tr><td>Owner, network, abuse contact</td><td>Regional internet registry (RDAP)</td><td>The organization the block is registered to and where to report misuse.</td></tr>
 <tr><td>Announced prefix, origin AS</td><td>Global BGP routing table (RIPEstat)</td><td>Which network actually routes the address on the internet today.</td></tr>
-<tr><td>Blocklists</td><td>12 DNS blocklists</td><td>Whether the address is known for sending spam (IPv4 only).</td></tr>
+<tr><td>Blocklists</td><td>10 DNS blocklists</td><td>Whether the address is known for sending spam (IPv4 only).</td></tr>
 </tbody>
 </table>
 

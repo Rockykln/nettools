@@ -32,7 +32,7 @@ function footer(): SafeHtml {
   return html`<footer class="site-footer"><div class="wrap">
 <div class="footer-top">
 <div class="footer-brand"><a class="brand" href="/"><img src="/assets/brand/logo.svg?v=${SITE.assetVersion}" alt="" width="32" height="32">${SITE.name}</a>
-<p>${SITE.tagline}. Open source, no ads, no cookies, no sign-up.</p></div>
+<p>${SITE.tagline}. Open source, no cookies, no sign-up.</p></div>
 <div class="footer-cols">${CATEGORIES.map((cat) => {
     const tools = TOOLS.filter((t) => t.category === cat.id);
     if (!tools.length) return '';
