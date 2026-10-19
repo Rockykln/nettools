@@ -5,7 +5,7 @@ import { openLink } from '../core/ui';
 import { json } from '../core/http';
 import { normalizeDomain } from '../core/net';
 import type { Tool } from '../core/tool';
-import { lookup, whoisNotFound, type Lookup } from './whois';
+import { lookupUncached, whoisNotFound, type Lookup } from './whois';
 
 const POPULAR_TLDS = ['com', 'net', 'org', 'io', 'dev', 'app', 'co', 'ai', 'de', 'eu', 'xyz', 'me'];
 
@@ -66,7 +66,9 @@ export function interpret(domain: string, l: Lookup): Check {
 
 async function check(domain: string): Promise<Check> {
   try {
-    return interpret(domain, await lookup({ input: domain, kind: 'domain', value: domain }));
+    // Uncached on purpose: checkAll caches the whole result, and a cache read and write per domain would add
+    // 24 subrequests, enough to hit the limit of 50 per request together with retries.
+    return interpret(domain, await lookupUncached({ input: domain, kind: 'domain', value: domain }));
   } catch {
     return { domain, status: 'unknown', registrar: null, expires: null, note: 'The registry did not answer.' };
   }
@@ -272,7 +274,7 @@ harder.</p>`,
 
   faq: [
     { q: 'Is the result always correct?', a: 'It reflects what the registry reports at the time of the check. Names that were just deleted, premium names and names reserved by the registry can still behave differently at checkout. Your registrar has the final word.' },
-    { q: 'Do you store or sell the names I check?', a: 'No. Lookups are not stored and nothing is sent to registrars. Registry answers are cached for up to about an hour for registered names and 15 minutes for unregistered names to reduce load on the registries.' },
+    { q: 'Do you store or sell the names I check?', a: 'No. Lookups are not stored and nothing is sent to registrars. Results are cached for five minutes to reduce load on the registries; checks where a registry did not answer are not cached.' },
     { q: 'Which domain endings are checked?', a: 'Twelve popular endings: .com, .net, .org, .io, .dev, .app, .co, .ai, .de, .eu, .xyz and .me. If you enter a full domain with another ending, that domain is checked first.' },
     { q: 'Why is a domain taken but no website works?', a: 'Many domains are registered without a website, for example to protect a brand, for email only, or to resell them. Use the WHOIS lookup to see the registrar and expiry date.' },
     { q: 'When does an expired domain become available again?', a: 'For most generic endings, an expired domain passes through a grace period of up to 45 days, a 30-day redemption period and about five days of pending delete. Country code endings have their own rules.' },

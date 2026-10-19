@@ -163,7 +163,7 @@ async function whoisFallback(domain: string): Promise<{ server: string; text: st
   return last;
 }
 
-async function lookupUncached(q: Query): Promise<Lookup> {
+export async function lookupUncached(q: Query): Promise<Lookup> {
   const base = await rdapBase(q);
   if (!base) {
     if (q.kind !== 'domain') throw new Error('No RDAP service found for this address range.');
