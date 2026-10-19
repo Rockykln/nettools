@@ -138,11 +138,11 @@ ${r.hosts.length ? html`<div class="table-scroll" tabindex="0" role="region" ari
   },
 
   article: html`<h2>How it works</h2>
-<p>Every publicly trusted TLS certificate is recorded in Certificate Transparency (CT) logs. CT is defined in RFC 6962:
+<p>Every publicly trusted TLS certificate is recorded in Certificate Transparency (CT) logs. CT is defined in RFC 6962 (version 1, the one in use; RFC 9162 defines version 2):
 certificate authorities submit each certificate, or a precertificate before issuance, to public append-only logs and
 receive signed certificate timestamps (SCTs) in return. Chrome has required SCTs for all newly issued publicly
-trusted certificates since April 2018, and Safari has a similar policy, so a certificate that was not logged is
-rejected by most browsers.</p>
+trusted certificates since April 2018; Safari and, since version 135, desktop Firefox enforce CT as well, so a
+certificate that was not logged is rejected by most browsers.</p>
 <p>Because the logs are public, the host names in every certificate ever issued for a domain can be searched. This
 tool queries <a href="https://crt.sh/" rel="noopener">crt.sh</a>, a search service that indexes the major logs, for
 all names ending in your domain, then removes duplicates and groups the results by host name. Wildcard entries such
@@ -196,8 +196,8 @@ to be found.</li>
 <li><strong>Zone transfers:</strong> a name server that allows <code>AXFR</code> to anyone hands out the whole zone.
 Test your own servers with <code>dig @ns1.example.com example.com AXFR</code>; the answer should be refused.</li>
 <li><strong>NSEC zone walking:</strong> zones signed with DNSSEC using NSEC records can be enumerated by following the
-chain of NSEC records. NSEC3 makes this much harder. The <a href="/dnssec-check">DNSSEC check</a> shows which
-method a domain uses.</li>
+chain of NSEC records. NSEC3 makes this much harder. To see which method a zone uses, query a name that does not exist, for example
+<code>dig +dnssec doesnotexist.example.com</code>, and look for NSEC or NSEC3 records in the authority section.</li>
 <li><strong>Passive DNS and web crawlers:</strong> commercial databases record names seen in DNS traffic and links.</li>
 </ul>
 

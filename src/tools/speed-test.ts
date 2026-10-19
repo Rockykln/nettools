@@ -205,7 +205,7 @@ nothing is stored on the server. If you share a result, the numbers are encoded 
     },
     {
       q: 'How much data does the test use?',
-      a: 'Roughly 50 to 500 MB, depending on your speed. Slow connections transfer less data in the eight seconds per phase, gigabit lines more.',
+      a: 'About 1 MB per Mbit/s of line speed in each direction: roughly 50 MB at 25 Mbit/s, 200 MB at 100 Mbit/s and up to about 2 GB on a symmetric gigabit line, because each phase runs for eight seconds.',
     },
     {
       q: 'Is the result stored?',

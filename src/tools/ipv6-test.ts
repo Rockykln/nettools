@@ -37,10 +37,10 @@ const tool: Tool = {
 
   article: html`<h2>Why IPv6 exists</h2>
 <p>IPv4 has about 4.3 billion addresses, far fewer than the number of devices online. IANA handed out its last
-free IPv4 blocks in 2011, and the regional registries have since run out as well. Networks have stretched IPv4 with
+free IPv4 blocks in 2011, and four of the five regional registries have since run out; AFRINIC is handing out its last small blocks. Networks have stretched IPv4 with
 NAT: your router shares one public address among all devices at home, and many providers add another layer, carrier-grade
 NAT (CGNAT), so that many customers share a single public address.</p>
-<p>IPv6 uses 128-bit addresses. A single home connection typically receives a whole prefix, often a /56 or a /48,
+<p>IPv6 uses 128-bit addresses. A single home connection typically receives a whole prefix, often a /56, sometimes a /60, /64 or /48,
 and every device gets its own globally routable address. No address sharing is needed, which makes incoming
 connections, VoIP and peer-to-peer traffic simpler.</p>
 

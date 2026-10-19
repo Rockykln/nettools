@@ -154,7 +154,7 @@ both, browsers normally prefer IPv6, so this page shows the IPv6 address. That d
 address; it only means this connection used IPv6.</p>
 <p>A typical home IPv6 setup gives the router a prefix, often a <code>/56</code> or <code>/64</code>, and each device
 picks its own address from it. Many systems use temporary privacy addresses (RFC 8981) for outgoing connections, so
-the last part of the IPv6 address shown here can change several times a day while the prefix stays the same.</p>
+the last part of the IPv6 address shown here can change about once a day while the prefix stays the same.</p>
 
 <h2>What the other fields mean</h2>
 <table class="data"><thead><tr><th>Field</th><th>What it tells you</th></tr></thead><tbody>
@@ -224,7 +224,7 @@ contact and blocklist status of any address, use the <a href="/ip-lookup">IP loo
     },
     {
       q: 'Does my IP address change?',
-      a: 'Most home connections get a dynamic address that can change after a router restart or every few days. Business lines often have a static address. IPv6 privacy addresses on your devices can change several times a day.',
+      a: 'Most home connections get a dynamic address that can change after a router restart or every few days. Business lines often have a static address. IPv6 privacy addresses on your devices change about once a day.',
     },
     {
       q: 'How do I hide my IP address?',

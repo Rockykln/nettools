@@ -212,8 +212,9 @@ then shows as unavailable. Each result links to the list's own lookup and remova
 (lowest preference value) and checks that host's IPv4 address. This is the server that receives mail, which is often
 but not always the server that sends it. If your outgoing mail leaves through a different IP, enter that IP directly.</li>
 </ul>
-<p>To find the sending IP, open a message you sent in the recipient's mailbox and look at the topmost
-<code>Received:</code> header added by the receiving server. To check your current public address, see
+<p>To find the sending IP, open a message you sent in the recipient's mailbox and find the
+<code>Received:</code> header in which the recipient's inbound mail server accepted the message from outside; its
+<code>from</code> part shows the sending IP. The <a href="/email-headers">email header analyzer</a> lists all hops. To check your current public address, see
 <a href="/what-is-my-ip">what is my IP</a>; the <a href="/mx-lookup">MX lookup</a> lists all mail hosts of a domain.</p>
 
 <h2>Why Spamhaus may show as unavailable</h2>

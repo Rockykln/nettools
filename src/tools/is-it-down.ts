@@ -5,7 +5,7 @@ import { openLink } from '../core/ui';
 import { json } from '../core/http';
 import { fetchChain, normalizeUrl, type Chain } from '../core/http-probe';
 import type { Tool } from '../core/tool';
-import { RESOLVERS, resolve } from '../core/transport';
+import { COMPARE_RESOLVERS, RESOLVERS, resolve } from '../core/transport';
 import { chainTable } from './http-headers';
 
 type Verdict = 'up' | 'blocked' | 'error' | 'down' | 'refused';
@@ -143,7 +143,7 @@ the site is up and the fault is somewhere on your side of the connection.</p>
 and without running any JavaScript. In parallel, the host name is resolved in DNS to its IPv4 (A) and IPv6 (AAAA)
 addresses. The check then:</p>
 <ol>
-<li>Follows up to 5 redirects, for example from <code>http://example.com</code> to <code>https://www.example.com/</code>,
+<li>Follows up to 4 redirects (5 requests in total), for example from <code>http://example.com</code> to <code>https://www.example.com/</code>,
 and shows every hop with its status code and response time.</li>
 <li>Waits up to 8 seconds for each request and 15 seconds in total. A server that has not answered by then is treated as unreachable.</li>
 <li>Refuses private and internal addresses such as <code>192.168.1.1</code>, <code>10.0.0.5</code> or
@@ -196,7 +196,7 @@ with systemd-resolved, <code>sudo dscacheutil -flushcache; sudo killall -HUP mDN
 <li>Switch to a public DNS resolver such as 1.1.1.1 or 8.8.8.8, in case your provider's resolver is broken or filtering.</li>
 <li>Compare the IP addresses shown here with what your computer resolves: <code>nslookup example.com</code>. A different or
 outdated address can mean a recent DNS change has not reached your resolver yet. The
-<a href="/dns-propagation-checker">DNS propagation checker</a> shows what 10 public resolvers return.</li>
+<a href="/dns-propagation-checker">DNS propagation checker</a> shows what ${COMPARE_RESOLVERS.length} public resolvers return.</li>
 <li>Check whether a school, company or parental-control filter blocks the site.</li>
 </ol>
 

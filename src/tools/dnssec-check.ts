@@ -9,7 +9,7 @@ import { RESOLVERS, resolve } from '../core/transport';
 
 const ALGORITHMS: Record<number, [string, boolean]> = {
   // [name, still recommended]
-  5: ['RSA/SHA-1', false], 7: ['RSASHA1-NSEC3', false], 8: ['RSA/SHA-256', true], 10: ['RSA/SHA-512', true],
+  5: ['RSA/SHA-1', false], 7: ['RSASHA1-NSEC3', false], 8: ['RSA/SHA-256', true], 10: ['RSA/SHA-512', false],
   13: ['ECDSA P-256', true], 14: ['ECDSA P-384', true], 15: ['Ed25519', true], 16: ['Ed448', true],
 };
 const DIGESTS: Record<number, string> = { 1: 'SHA-1', 2: 'SHA-256', 4: 'SHA-384' };
@@ -228,14 +228,15 @@ type and digest exactly.</li>
 (RFC 7344, RFC 8078). If yours does, step 2 happens on its own.</p>
 
 <h2>DNSSEC algorithms</h2>
-<p>Every DNSKEY and DS record names its algorithm by number. RFC 8624 lists which ones should be used.</p>
+<p>Every DNSKEY and DS record names its algorithm by number. The recommendations, formerly in RFC 8624, are kept in the
+IANA DNSSEC algorithm registry since RFC 9904.</p>
 <table class="data">
 <thead><tr><th>Number</th><th>Algorithm</th><th>Status</th></tr></thead>
 <tbody>
 <tr><td>5</td><td>RSA/SHA-1</td><td>Deprecated, do not use for signing</td></tr>
 <tr><td>7</td><td>RSASHA1-NSEC3-SHA1</td><td>Deprecated, do not use for signing</td></tr>
 <tr><td>8</td><td>RSA/SHA-256</td><td>Widely used, fine</td></tr>
-<tr><td>10</td><td>RSA/SHA-512</td><td>Works, rarely used</td></tr>
+<tr><td>10</td><td>RSA/SHA-512</td><td>Not recommended for signing; validators still support it</td></tr>
 <tr><td>13</td><td>ECDSA P-256 with SHA-256</td><td>Recommended, the most common modern choice</td></tr>
 <tr><td>14</td><td>ECDSA P-384 with SHA-384</td><td>Works, rarely used</td></tr>
 <tr><td>15</td><td>Ed25519</td><td>Recommended, not yet validated by every resolver</td></tr>

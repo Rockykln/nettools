@@ -224,7 +224,7 @@ ${ok.length ? waterfall(r) : html`<p class="error">${r.runs[0]?.error ?? 'No res
 <p>Enter a host name or a full URL, for example <code>wikipedia.org</code> or <code>https://your-domain.tld/login</code>.
 The tool resolves the name once, then opens three fresh connections one after another. For each run it measures the TCP
 connect, performs the TLS handshake for HTTPS URLs, sends a single HTTP/1.1 GET request and reads the response until
-the server closes the connection or 2 MB have arrived. Nothing is reused between runs: no keep-alive, no TLS session
+the server closes the connection or 2 MB have arrived. For sites not behind Cloudflare, nothing is reused between runs: no keep-alive, no TLS session
 resumption, no cache on our side. The waterfall shows the median of the three runs, and the table below it lists every
 run, so you can see whether the values are stable or one attempt was an outlier.</p>
 <p>The measurement runs from the Cloudflare data center that handled your request, usually the one closest to you. Its

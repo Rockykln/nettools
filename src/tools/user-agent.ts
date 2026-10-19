@@ -208,8 +208,8 @@ began calling itself "Mozilla compatible" to get the same pages. Later browsers 
 before them, which is why Chrome claims to be Safari and every WebKit or Blink browser says "like Gecko".</p>
 
 <h2>Anatomy of a user agent</h2>
-<p>A current Chrome on Windows sends a string like this:</p>
-<pre class="raw">Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36</pre>
+<p>Chrome on Windows sends a string like this (the version number changes every four weeks):</p>
+<pre class="raw">Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36</pre>
 <table class="data">
 <thead><tr><th>Token</th><th>Meaning</th></tr></thead>
 <tbody>
@@ -217,7 +217,7 @@ before them, which is why Chrome claims to be Safari and every WebKit or Blink b
 <tr><td><code>Windows NT 10.0; Win64; x64</code></td><td>Platform: Windows, 64-bit. The same value is sent on Windows 10 and Windows 11.</td></tr>
 <tr><td><code>AppleWebKit/537.36</code></td><td>Engine token. Blink forked from WebKit and kept this value frozen.</td></tr>
 <tr><td><code>(KHTML, like Gecko)</code></td><td>WebKit started as a fork of KDE's KHTML; "like Gecko" claims Firefox compatibility.</td></tr>
-<tr><td><code>Chrome/130.0.0.0</code></td><td>The actual browser and its major version. Minor, build and patch are zeros.</td></tr>
+<tr><td><code>Chrome/141.0.0.0</code></td><td>The actual browser and its major version. Minor, build and patch are zeros.</td></tr>
 <tr><td><code>Safari/537.36</code></td><td>Compatibility token for sites that only checked for Safari.</td></tr>
 </tbody>
 </table>
@@ -255,7 +255,7 @@ it can show the real platform version. On Windows, a platform version of 13 or h
 Safari do not support client hints.</p>
 
 <h2>Engines on iOS</h2>
-<p>Apple has long required browsers on iOS and iPadOS to use WebKit. Chrome (<code>CriOS</code>), Firefox
+<p>Outside the EU and Japan, Apple requires browsers on iOS and iPadOS to use WebKit, and most still do so everywhere. Chrome (<code>CriOS</code>), Firefox
 (<code>FxiOS</code>) and Edge (<code>EdgiOS</code>) on an iPhone are WebKit browsers with their own interface, so
 the tool reports WebKit for all of them.</p>
 

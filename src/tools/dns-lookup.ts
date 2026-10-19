@@ -300,7 +300,7 @@ chain of trust breaks, use the <a href="/dnssec-check">DNSSEC checker</a>.</p>
 <li><strong>NXDOMAIN:</strong> check the spelling, whether the domain is registered and not expired, and whether the
 parent zone lists name servers for it (<code>dig NS example.com</code>).</li>
 <li><strong>SERVFAIL:</strong> the authoritative servers did not answer, answered incorrectly, or DNSSEC validation failed.</li>
-<li><strong>Old value still shown:</strong> wait for the TTL; lower it to 300 seconds a day before planned changes.</li>
+<li><strong>Old value still shown:</strong> wait for the TTL; lower it to 300 seconds at least one full old TTL before planned changes.</li>
 <li><strong>Works here, not on your PC:</strong> flush the local cache (<code>ipconfig /flushdns</code> on Windows,
 <code>resolvectl flush-caches</code> on Linux with systemd-resolved) and check the hosts file.</li>
 <li><strong>DNS resolves but the site is unreachable:</strong> test the address with the

@@ -392,9 +392,9 @@ that matches decides the result.</p>
 <tbody>
 <tr><td><code>ip4:</code>, <code>ip6:</code></td><td>is inside the given address or range</td><td>0</td></tr>
 <tr><td><code>a</code>, <code>a:host</code></td><td>is an A/AAAA address of the domain or host</td><td>1</td></tr>
-<tr><td><code>mx</code></td><td>is an address of one of the domain's MX hosts</td><td>1 (at most 10 MX hosts are checked)</td></tr>
+<tr><td><code>mx</code></td><td>is an address of one of the domain's MX hosts</td><td>1 (more than 10 MX hosts cause a permerror)</td></tr>
 <tr><td><code>include:domain</code></td><td>passes the SPF record of another domain</td><td>1 plus everything inside</td></tr>
-<tr><td><code>exists:domain</code></td><td>makes the given name resolve to any A record (used with macros)</td><td>1</td></tr>
+<tr><td><code>exists:domain</code></td><td>(after macro expansion) the given name resolves to any A record</td><td>1</td></tr>
 <tr><td><code>ptr</code></td><td>has a matching reverse DNS name; deprecated, do not use</td><td>1</td></tr>
 <tr><td><code>all</code></td><td>always matches; goes last</td><td>0</td></tr>
 </tbody>
@@ -409,8 +409,9 @@ also costs a lookup.</p>
 more returns a permanent error (permerror), and receivers treat SPF as failed for every message, including legitimate
 ones. Each additional SaaS tool you add with its own include eats into the same budget.</p>
 <p>The second limit is the void lookup limit: RFC 7208 recommends that receivers stop after 2 lookups that return no
-records or NXDOMAIN. Includes pointing to domains that no longer exist count toward it, so remove leftovers from
-services you stopped using.</p>
+records or NXDOMAIN. An include that points to a domain without an SPF record, or to one that no longer exists, is
+worse: it makes the whole evaluation return permerror (RFC 7208, section 5.2). Remove leftovers from services you
+stopped using.</p>
 
 <h2>Only one record</h2>
 <p>A name may have only one TXT record that starts with <code>v=spf1</code>. When a new provider tells you to “add an
@@ -464,7 +465,7 @@ const dmarc = landing(emailSecurity, {
   examples: [['google.com', 'domain=google.com'], ['github.com', 'domain=github.com']],
   related: ['spf-checker', 'dkim-checker', 'email-security'],
   article: html`<h2>What DMARC does</h2>
-<p>DMARC (Domain-based Message Authentication, Reporting and Conformance, RFC 7489) is a TXT record at
+<p>DMARC (Domain-based Message Authentication, Reporting and Conformance, RFC 9989, which replaced RFC 7489 in 2026) is a TXT record at
 <code>_dmarc.example.com</code>. It closes the gap that SPF and DKIM leave open: both can pass for a domain that has
 nothing to do with the address in the <code>From:</code> header. DMARC requires that at least one of them passes
 <em>and</em> is aligned with the From domain, tells receivers what to do with mail that fails, and asks them to send
@@ -488,8 +489,9 @@ both.</p>
 <tr><td><code>fo</code></td><td>When to send failure reports: <code>0</code> all fail, <code>1</code> any fails, <code>d</code> DKIM fails, <code>s</code> SPF fails</td><td><code>0</code></td></tr>
 </tbody>
 </table>
-<p>The revision of the standard known as DMARCbis replaces <code>pct</code> with a simpler <code>t</code> (testing)
-flag.</p>
+<p>DMARCbis, published in 2026 as RFC 9989, drops <code>pct</code> in favor of a simpler <code>t=y</code> (testing)
+flag and adds <code>np</code> for subdomains that do not exist. Receivers still honor <code>pct</code> in existing
+records, but new records should not rely on it.</p>
 
 <h2>Alignment</h2>
 <p>SPF authenticates the envelope sender domain, DKIM the <code>d=</code> domain in the signature. Alignment compares
@@ -504,7 +506,8 @@ Configure custom DKIM for every such service.</p>
 <li>Publish <code>p=none</code> with a <code>rua</code> address. Nothing is blocked; you start receiving reports.</li>
 <li>For a few weeks, read the reports and list every source that sends as your domain: mail server, Microsoft 365 or
 Google Workspace, newsletter tool, CRM, invoicing, ticket system. Fix SPF and DKIM for each legitimate one.</li>
-<li>Move to <code>p=quarantine</code>. If you are unsure, apply it to a share of mail first with <code>pct</code>.</li>
+<li>Move to <code>p=quarantine</code>. If you are unsure, add <code>t=y</code> first: receivers then report as before
+but apply the next lower policy.</li>
 <li>When the reports show only spoofed mail failing, switch to <code>p=reject</code>. Keep reading reports afterwards,
 because new services get added without anyone telling IT.</li>
 </ol>
@@ -590,8 +593,8 @@ and one for the sending service's own domain. The <a href="/email-headers">email
 </table>
 
 <h2>Key length</h2>
-<p>RFC 8301 requires RSA signing keys of at least 1024 bits and recommends 2048; receivers should not accept shorter
-keys. 1024-bit keys still verify, but 2048 is the sensible choice for every new key.</p>
+<p>RFC 8301 requires RSA signing keys of at least 1024 bits and recommends 2048; receivers must not treat signatures
+with shorter keys as valid. 1024-bit keys still verify, but 2048 is the sensible choice for every new key.</p>
 <p>A 2048-bit key is roughly 400 characters of base64, more than the 255-byte limit of a single TXT string. It must be
 stored as several strings within one record, which receivers join without spaces. Most DNS panels split long values
 automatically; some expect the chunks entered by hand. If a key shows up as invalid, look for an added space between
@@ -860,8 +863,9 @@ CAA set it finds. For <code>shop.eu.example.com</code> the order is:</p>
 <p>A record on <code>example.com</code> therefore covers all subdomains, unless a subdomain has its own CAA set, which
 replaces the parent's completely rather than adding to it. If a name is a CNAME, the DNS query returns the CAA records
 of the alias target, and those apply.</p>
-<p>No CAA record anywhere up the tree means any CA may issue. A failed lookup is not the same as an empty answer: if the
-name server times out or the resolver returns SERVFAIL, the CA is expected to refuse.</p>
+<p>No CAA record anywhere up the tree means any CA may issue. A failed lookup is not the same as an empty answer: for a
+DNSSEC-signed zone a CA must refuse when the lookup fails. For unsigned zones the CA/Browser Forum Baseline
+Requirements let a CA treat a repeated lookup failure outside its own infrastructure as permission to issue.</p>
 
 <h2>Effect on certificate issuance</h2>
 <ul>

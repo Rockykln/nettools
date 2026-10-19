@@ -278,8 +278,8 @@ rules in that group if they should still apply.</li>
 
 <h2>AI crawlers</h2>
 <p>Many AI companies publish crawler names you can block, for example <code>GPTBot</code> (OpenAI),
-<code>ClaudeBot</code> (Anthropic), <code>CCBot</code> (Common Crawl) and <code>Google-Extended</code> (Google AI training,
-without affecting Google Search). Select a crawler above to test your rules for it. Social platforms fetch pages with
+<code>ClaudeBot</code> (Anthropic), <code>CCBot</code> (Common Crawl) and the <code>Google-Extended</code> token (controls whether Google may use pages
+for AI training; crawling is still done by Googlebot, so Search is not affected). Select a crawler above to test your rules for it. Social platforms fetch pages with
 their own crawlers too, such as <code>facebookexternalhit</code> and <code>Twitterbot</code>; if you block them, link
 previews break. The <a href="/social-preview">social preview checker</a> shows how your pages look when shared.</p>`,
 

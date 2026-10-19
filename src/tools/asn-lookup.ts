@@ -204,7 +204,7 @@ back here.</p>
 <p>Routing data comes from <a href="https://stat.ripe.net/" rel="noopener">RIPEstat</a>, which is built on the RIPE
 NCC Routing Information Service (RIS). RIS runs route collectors at internet exchanges around the world that receive full
 or partial BGP tables from hundreds of peering networks. The result reflects what the internet actually routes, which can
-differ from what is registered. Results on this site are cached for one hour.</p>
+differ from what is registered. Results on this site are cached for up to six hours.</p>
 <p>For the registration record of an AS or address block, including the organization and the abuse contact, use the
 <a href="/whois">WHOIS lookup</a>. Registration and routing are separate: a block can be registered to one company and
 announced by its provider, or registered but not announced at all.</p>
@@ -221,7 +221,9 @@ to 4,294,967,295. Some ranges have a special purpose:</p>
 <tr><td>64496 – 64511</td><td>Documentation and examples (RFC 5398)</td></tr>
 <tr><td>64512 – 65534</td><td>Private use (RFC 6996)</td></tr>
 <tr><td>65536 – 65551</td><td>Documentation, 32-bit (RFC 5398)</td></tr>
+<tr><td>65552 – 131071</td><td>Reserved (IANA)</td></tr>
 <tr><td>4200000000 – 4294967294</td><td>Private use, 32-bit (RFC 6996)</td></tr>
+<tr><td>65535 and 4294967295</td><td>Reserved, the last number of each range (RFC 7300)</td></tr>
 </tbody>
 </table>
 <p>Private ASNs are used inside data centers and between a customer and a single provider. They should not appear in
@@ -266,13 +268,13 @@ reserved for documentation, or simply not routed.</li>
 <li><strong>Unexpected company:</strong> a hosting, cloud or CDN provider announces the block on behalf of the site you
 are checking. Use <a href="/reverse-dns-lookup">reverse DNS</a> for more hints about the host.</li>
 <li><strong>Fresh change not visible:</strong> new announcements can take a while to show up in collected data, and
-cached results here are up to an hour old.</li>
+cached results here are up to six hours old.</li>
 </ul>`,
 
   faq: [
     { q: 'How do I find the AS number of my provider?', a: 'Open “What is my IP”: it shows the AS number of your connection, linked to this lookup. You can also enter any IP address here to see which AS announces it.' },
     { q: 'Why does an IP belong to a different company than expected?', a: 'Address blocks can be routed by a provider on behalf of a customer, or belong to a cloud or CDN that hosts the website. The origin AS is the network announcing the route, not necessarily the organization using the address.' },
-    { q: 'How current is the data?', a: 'RIPEstat updates routing data several times a day. Results here are cached for up to an hour.' },
+    { q: 'How current is the data?', a: 'RIPEstat updates routing data several times a day. Results here are cached for up to six hours.' },
     { q: 'What is the difference between a 16-bit and a 32-bit ASN?', a: 'Only the size of the number. ASNs up to 65535 fit in 16 bits; larger ones need 32-bit support, which all current routers have. Older notation sometimes writes 32-bit ASNs as two numbers with a dot, for example 1.10 for 65546.' },
     { q: 'How do I get my own AS number?', a: 'Apply at the regional internet registry for your region, usually through a member or sponsoring provider. You generally need a technical reason, such as connecting to two or more upstream providers.' },
     { q: 'Is an ASN the same as an IP address block?', a: 'No. The ASN identifies the network operator in routing; the IP blocks are the addresses it announces. One AS can announce hundreds of prefixes, and a prefix can move from one AS to another.' },

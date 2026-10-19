@@ -268,7 +268,7 @@ the allowed <code>mx:</code> hosts and a <code>max_age</code>. Change the <code>
 <p>TLS-RPT (RFC 8460) asks sending servers to report TLS problems: <code>v=TLSRPTv1; rua=mailto:tlsrpt@example.com</code>
 at <code>_smtp._tls.example.com</code>. Set it up before switching MTA-STS to <code>enforce</code>.</p>
 <p>BIMI shows your logo in inboxes such as Gmail and Yahoo. It requires DMARC at <code>p=quarantine</code> or
-<code>p=reject</code>, a logo in SVG Tiny PS format, and for Gmail a Verified Mark Certificate or Common Mark Certificate.</p>
+<code>p=reject</code> without a <code>pct</code> below 100, a logo in SVG Tiny PS format, and for Gmail a Verified Mark Certificate or Common Mark Certificate.</p>
 
 <h2>Google, Yahoo and Microsoft sender requirements</h2>
 <p>Since February 2024, Google and Yahoo require all senders to authenticate with SPF or DKIM and to have valid forward

@@ -216,7 +216,7 @@ runs three tests in parallel.</p>
 must lead to a trusted root certificate, the certificate must be within its validity dates, and it must cover the host
 name you entered (sent as SNI). These are the same checks a browser makes. If the handshake succeeds, the time it took
 is shown.</li>
-<li>It requests <code>http://</code> for the host, follows the redirects and reports whether the final address uses
+<li>It requests <code>http://</code> for the host, follows the redirects and reports whether it redirects to
 HTTPS.</li>
 <li>It looks up the current certificates for exactly this host name in public Certificate Transparency logs, using
 Cert Spotter by SSLMate first and crt.sh as a fallback. Expired and (where the log source reports it) revoked
@@ -269,12 +269,13 @@ Manual renewal once a year is therefore no longer an option; certificates have t
 <p>The standard way to do this is ACME (RFC 8555), the protocol behind Let's Encrypt and supported by several other CAs.
 Clients such as certbot, acme.sh, lego or the built-in support in Caddy and Traefik prove control of the domain with an
 HTTP-01 challenge (a file under <code>/.well-known/acme-challenge/</code> on port 80) or a DNS-01 challenge (a TXT
-record), then renew well before expiry. Let's Encrypt certificates are valid for 90 days, and Let's Encrypt no longer
+record), then renew well before expiry. Let's Encrypt certificates are currently valid for 90 days by default (shorter lifetimes down to 45 days are
+announced), and Let's Encrypt no longer
 sends expiry reminder emails, so external monitoring of the expiry date is worth having. To limit which CAs may issue
 for your domain at all, publish a CAA record and check it with the <a href="/dns-lookup">DNS lookup</a>.</p>
 
 <h2>Certificate Transparency</h2>
-<p>Chrome and Safari only accept publicly trusted certificates that are recorded in public, append-only Certificate
+<p>Chrome, Safari and Firefox only accept publicly trusted certificates that are recorded in public, append-only Certificate
 Transparency logs, so in practice CAs log every certificate they issue. That makes the logs a useful data source: you can see every
 certificate issued for your names, including ones you did not request. Unexpected issuers in the list can point to a
 forgotten service, a second hosting provider or a misissued certificate. New certificates usually appear in the search

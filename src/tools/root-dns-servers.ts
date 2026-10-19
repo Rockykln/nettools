@@ -193,7 +193,7 @@ UDP response must fit in 512 bytes: 13 names and their IPv4 addresses were the m
 response.</p>
 <p>Thirteen identities does not mean thirteen machines. Each identity is announced from many locations using
 anycast: the same IP address is routed to whichever instance is closest in network terms. In total there are about
-1,900 root server instances worldwide, and new ones are added every year.</p>
+2,000 root server instances worldwide, and new ones are added every year.</p>
 
 <table class="data">
 <thead><tr><th>Root</th><th>Operator</th><th>IPv4</th></tr></thead>
@@ -267,7 +267,7 @@ and latency test</a>.</p>
 <h2>Root servers and DNSSEC</h2>
 <p>The root zone has been signed with DNSSEC since 2010. Validating resolvers trust the root key signing key
 (KSK) and build a chain of trust down to each signed domain. The first KSK rollover took place on 11 October 2018,
-when KSK-2017 replaced the original 2010 key; a second rollover to KSK-2024 is scheduled by ICANN for 2026. Resolvers
+when KSK-2017 replaced the original 2010 key; the second rollover, to KSK-2024, took place on 11 October 2026, and KSK-2017 is revoked in January 2027. Resolvers
 that do not pick up a new key automatically fail to validate every signed name, which is why the rollovers are
 announced years in advance. IANA publishes the current trust anchors at data.iana.org. To check that the chain works for a specific domain, use
 the <a href="/dnssec-check">DNSSEC validation check</a>.</p>
@@ -293,7 +293,7 @@ the <a href="/dns-propagation-checker">DNS propagation checker</a>.</li>
     },
     {
       q: 'How many root server instances are there?',
-      a: 'About 1,900 worldwide. Each of the 13 identities, a.root-servers.net to m.root-servers.net, is announced from many locations with anycast, and your resolver reaches the nearest instance.',
+      a: 'About 2,000 worldwide. Each of the 13 identities, a.root-servers.net to m.root-servers.net, is announced from many locations with anycast, and your resolver reaches the nearest instance.',
     },
     {
       q: 'What happens if a root server goes down?',
