@@ -46,7 +46,7 @@ const settle = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null);
 
 async function report(c: ToolContext, ip: string, host: string | null): Promise<Report> {
   const [hostname, country, routing, whois, lists] = await Promise.all([
-    settle(cachedJson(`ptr:${ip}`, () => 3600, () => ptr(ip))),
+    settle(cachedJson(`ptr:${ip}`, (h) => (h ? 3600 : 0), () => ptr(ip))),
     settle(countryOf(c.env.ASSETS, ip)),
     settle(prefixReport(ip)),
     settle(lookup({ input: ip, kind: 'ip', value: ip })),
@@ -92,7 +92,7 @@ function render(r: Report): SafeHtml {
 <tr><th scope="row">Announced prefix</th><td>${r.routing ? (r.routing.announced ? html`<a href="/subnet-calculator?cidr=${encodeURIComponent(r.routing.prefix)}"><code>${r.routing.prefix}</code></a>` : html`<span class="status warn">not announced in BGP</span>`) : '—'}</td></tr>
 <tr><th scope="row">Origin AS</th><td>${origin ? html`<a href="/asn-lookup?q=AS${origin.asn}">AS${origin.asn}</a> ${origin.holder}` : '—'}</td></tr>
 <tr><th scope="row">Blocklists</th><td>${r.version === 6 ? html`<span class="muted">not checked; most lists cover IPv4 only</span>`
-    : !r.blocklists ? '—'
+    : !r.blocklists?.answered ? html`<span class="muted">no list answered; try the <a href="/blacklist-check?q=${enc}">blacklist check</a> later</span>`
     : r.blocklists.listed.length ? html`<span class="status bad">listed on ${r.blocklists.listed.length} of ${r.blocklists.answered}</span> ${r.blocklists.listed.join(', ')}`
     : html`<span class="status ok">not listed</span> <span class="muted">on any of ${r.blocklists.answered} lists that answered</span>`}</td></tr>
 </tbody></table>

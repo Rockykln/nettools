@@ -109,7 +109,7 @@ async function check(host: string, env: Env, cloudflare: boolean): Promise<Repor
     ctCerts(host),
   ]);
   // A redirect to https counts even if the https hop itself then fails, e.g. with an expired certificate.
-  const toHttps = chain?.hops.some((h) => h.status >= 300 && h.status < 400 && !!h.location && /^https:/i.test(new URL(h.location, h.url).href)) ?? false;
+  const toHttps = chain?.hops.some((h) => h.status >= 300 && h.status < 400 && !!h.location && URL.canParse(h.location, h.url) && new URL(h.location, h.url).protocol === 'https:') ?? false;
   return {
     host,
     cloudflare,

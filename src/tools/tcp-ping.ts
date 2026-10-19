@@ -128,7 +128,7 @@ const tool: Tool = {
   async render(c) {
     const hostRaw = (c.url.searchParams.get('host') ?? '').trim();
     const portRaw = (c.url.searchParams.get('port') ?? '443').trim();
-    if (!c.url.searchParams.has('host')) return form('', '443');
+    if (!c.url.searchParams.has('host')) return form('', '');
     const p = parse(c.url);
     if ('error' in p) return html`${form(hostRaw, portRaw)}<p class="error">${p.error}</p>`;
     const r = await run(c, p);

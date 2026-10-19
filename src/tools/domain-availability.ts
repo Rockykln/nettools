@@ -34,8 +34,8 @@ function findEntity(entities: Record<string, any>[] | undefined, role: string): 
   return undefined;
 }
 
-// Field names differ between registries; .de and .eu publish neither.
-const REGISTRAR = /^\s*(?:registrar|sponsoring registrar|registrar name)\s*:[ \t]*(\S[^\r\n]*)$/im;
+// Field names differ between registries; .eu nests the name under "Registrar:", .de publishes neither.
+const REGISTRAR = /^\s*(?:registrar|sponsoring registrar|registrar name)\s*:(?:[ \t]*\r?\n[ \t]+name\s*:)?[ \t]*(\S[^\r\n]*)$/im;
 const EXPIRY = /^\s*(?:registry expiry date|registrar registration expiration date|expiry date|expiration date|expires(?: on)?|paid-till)\s*:[ \t]*(\S[^\r\n]*)$/im;
 
 function whoisField(text: string, re: RegExp): string | null {

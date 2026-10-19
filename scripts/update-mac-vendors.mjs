@@ -28,6 +28,21 @@ function parseCsv(text) {
   return rows;
 }
 
+const regions = new Intl.DisplayNames(['en'], { type: 'region' });
+const isCountry = (code) => { try { return regions.of(code) !== code; } catch { return false; } };
+
+// IEEE addresses end with "<country> <postal code>" (e.g. "NL 5633 AD", "GB N3 1 RL", "CA M1R 3E4") or just the
+// country; US addresses also contain the state ("CA US 95014"). Take the first valid ISO code that is followed
+// only by something shaped like a postal code, so neither the state nor a part of the postal code wins.
+function countryOf(address) {
+  const a = address.trim();
+  for (const m of a.matchAll(/\b([A-Z]{2})\b/g)) {
+    const rest = a.slice(m.index + 2).trim();
+    if (isCountry(m[1]) && rest.length <= 10 && /^[A-Z0-9 -]*$/.test(rest) && !/^[A-Z]{2}\b/.test(rest)) return m[1];
+  }
+  return null;
+}
+
 const records = new Map();
 
 for (const [url, bits] of SOURCES) {
@@ -42,7 +57,7 @@ for (const [url, bits] of SOURCES) {
   const rows = all.slice(1);
   for (const [, assignment, org, address] of rows) {
     if (!assignment || !org || !/^[0-9A-Fa-f]{6,9}$/.test(assignment.trim())) continue;
-    const country = (address ?? '').trim().match(/\b([A-Z]{2})\b(?:\s+\S+)?\s*$/)?.[1] ?? null;
+    const country = countryOf(address ?? '');
     records.set(assignment.trim().toUpperCase(), { bits, vendor: org.trim().replace(/\s+/g, ' '), country });
   }
   console.log(`${url}: ${rows.length} rows`);

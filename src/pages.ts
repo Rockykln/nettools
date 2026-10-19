@@ -229,7 +229,9 @@ because you request that lookup (Art. 49 (1) (b) GDPR). Switzerland, Japan, Cana
 decisions; for the USA the Data Privacy Framework applies to certified companies.</p>
 <p>Results may be cached for up to six hours to reduce load on these services. Your own IP address is not passed on,
 except where a tool is about your own connection: “What is my IP” looks up the reverse DNS name of your address, and
-the port checker connects to it if you leave the host empty.</p>
+the port checker connects to it if you leave the host empty. If you enter your own address into a lookup, for example
+via the “owner and blocklists” link on “What is my IP”, it is treated like any other input: IP lookup sends it to the
+regional registry (RDAP), RIPEstat and the DNS blocklists, and the results may be cached as described above.</p>
 
 <h2>Grade badges</h2>
 <p>Badges embedded on other websites are loaded from this site by those websites’ visitors. Their browsers send the

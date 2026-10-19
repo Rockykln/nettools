@@ -100,8 +100,12 @@ export function sitemapXml(env: Env, tools: Tool[]): string {
 }
 
 export function robotsTxt(env: Env): string {
-  // Query URLs are results (noindex) and link to endless further lookups; crawlers only need the tool pages.
-  return `User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /*?\n\nSitemap: ${absolute(env, '/sitemap.xml')}\n`;
+  // Query URLs are results (noindex) that link to endless further lookups; crawlers only need the tool pages.
+  // Assets and preview images carry ?v= cache busters, so they are allowed explicitly (the longer rule wins).
+  // The rules are repeated for the heaviest crawlers in case a parser reads only the first "*" group, which
+  // Cloudflare's managed robots.txt puts in front of this one.
+  const rules = 'Allow: /\nAllow: /assets/\nAllow: /og/\nDisallow: /api/\nDisallow: /badge/\nDisallow: /go\nDisallow: /*?\n';
+  return `User-agent: *\n${rules}\nUser-agent: Claude-SearchBot\nUser-agent: MJ12bot\n${rules}\nSitemap: ${absolute(env, '/sitemap.xml')}\n`;
 }
 
 function apiLine(doc: string): string {

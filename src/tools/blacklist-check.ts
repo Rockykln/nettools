@@ -103,7 +103,8 @@ async function target(input: string): Promise<{ ip: string; source: string } | {
 
 /** IPv4 only; one DNS query per list, cached for 10 minutes. */
 export function checkLists(ip: string): Promise<ListResult[]> {
-  return cachedJson(`dnsbl:${ip}`, () => 600, () => mapLimit(LISTS, 6, (l) => query(ip, l)));
+  // An answer where no list responded is not cached, so a retry asks again.
+  return cachedJson(`dnsbl:${ip}`, (r) => (r.some((x) => x.state !== 'unavailable') ? 600 : 0), () => mapLimit(LISTS, 6, (l) => query(ip, l)));
 }
 
 async function check(input: string): Promise<Report | { error: string }> {

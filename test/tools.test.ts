@@ -81,6 +81,8 @@ describe('domain availability', () => {
     expect(taken).toMatchObject({ status: 'taken', expires: '2030-01-02' });
     const io = interpret('x.io', { ...base, rdap: null, whoisText: 'Domain Name: x.io\nRegistrar: Example Registrar, Inc.\nRegistry Expiry Date: 2031-05-06T04:00:00Z', notFound: false });
     expect(io).toMatchObject({ status: 'taken', registrar: 'Example Registrar, Inc.', expires: '2031-05-06' });
+    const eu = interpret('x.eu', { ...base, rdap: null, whoisText: 'Domain: x.eu\n\nRegistrar:\n        Name: Markmonitor Inc.\n        Website: https://example.com', notFound: false });
+    expect(eu.registrar).toBe('Markmonitor Inc.');
   });
 });
 
