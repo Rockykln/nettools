@@ -23,7 +23,8 @@ export async function sampleRoots(env: Env): Promise<void> {
     'INSERT INTO root_samples (ts, colo, root, connect_ms, query_ms, serial, ok, instance) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
   );
   await env.DB.batch([
-    ...results.map((r) => insert.bind(ts, colo, r.server.letter, r.connectMs, r.queryMs, r.serial, r.error ? 0 : 1, r.instance)),
+    // Roots that Workers cannot reach from this location would only record false failures.
+    ...results.filter((r) => !r.untestable).map((r) => insert.bind(ts, colo, r.server.letter, r.connectMs, r.queryMs, r.serial, r.error ? 0 : 1, r.instance)),
     env.DB.prepare('DELETE FROM root_samples WHERE ts < ?').bind(ts - RETENTION_S),
   ]);
   console.log({ event: 'cron', job: 'root-monitor', colo, ok: results.filter((r) => !r.error).length });

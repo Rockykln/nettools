@@ -38,10 +38,14 @@ export interface RootResult {
   serial: number | null;
   instance: string | null;
   error: string | null;
+  /** The instance sits in Cloudflare's network, which Workers sockets cannot reach: not a failure of the root. */
+  untestable: boolean;
 }
 
+const UNTESTABLE = 'Not testable from Cloudflare Workers here: the nearest instance is served from Cloudflare’s own network';
+
 async function testRoot(server: RootServer): Promise<RootResult> {
-  const result: RootResult = { server, connectMs: null, queryMs: null, serial: null, instance: null, error: null };
+  const result: RootResult = { server, connectMs: null, queryMs: null, serial: null, instance: null, error: null, untestable: false };
   try {
     const soa = buildQuery('.', RR_TYPES.SOA, { rd: false, id: 0x1001 });
     const ident = buildQuery('id.server', RR_TYPES.TXT, { rd: false, cls: CLASS_CH, id: 0x1002 });
@@ -57,9 +61,8 @@ async function testRoot(server: RootServer): Promise<RootResult> {
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e);
     // Workers cannot open sockets to addresses served from Cloudflare's own network (some root instances are).
-    result.error = /proxy request failed|cannot connect to the specified address/i.test(message)
-      ? 'Not reachable from Cloudflare Workers here (this instance is likely served from Cloudflare’s network)'
-      : message;
+    result.untestable = /proxy request failed|cannot connect to the specified address/i.test(message);
+    result.error = result.untestable ? UNTESTABLE : message;
   }
   return result;
 }
@@ -90,6 +93,8 @@ function rootTable(results: RootResult[] | null, history: RootHistory | null, fr
   const latestTs = history ? Math.max(0, ...Object.values(history.latest).map((l) => l.ts)) : 0;
   const latestColo = history ? Object.values(history.latest)[0]?.colo : undefined;
   const okCount = results ? results.filter((r) => !r.error).length : Object.values(history?.latest ?? {}).filter((l) => l.ok).length;
+  // Untestable roots are not stored by the cron job, so the history only counts the testable ones.
+  const tested = results ? results.filter((r) => !r.untestable).length : Object.keys(history?.latest ?? {}).length;
   const serials = new Set(
     (results ? results.map((r) => r.serial) : Object.values(history?.latest ?? {}).map((l) => l.serial)).filter((s): s is number => s !== null),
   );
@@ -98,8 +103,8 @@ function rootTable(results: RootResult[] | null, history: RootHistory | null, fr
   const max = history ? Math.max(10, ...history.roots.flatMap((r) => r.series.filter((v): v is number => v !== null && v > 0))) : 10;
 
   let summary: SafeHtml | string = html`No measurements yet. The servers are checked every 10 minutes.`;
-  if (results) summary = html`Tested just now from Cloudflare <strong>${from}</strong>: ${okCount} of 13 answered`;
-  else if (latestTs) summary = html`Last automatic check ${ago(latestTs)} from Cloudflare <strong>${latestColo ?? ''}</strong>: ${okCount} of 13 answered`;
+  if (results) summary = html`Tested just now from Cloudflare <strong>${from}</strong>: ${okCount} of ${tested} testable roots answered`;
+  else if (latestTs) summary = html`Last automatic check ${ago(latestTs)} from Cloudflare <strong>${latestColo ?? ''}</strong>: ${okCount} of ${tested} testable roots answered`;
   const serialNote =
     serials.size === 1 ? html`, root zone serial <code>${[...serials][0]}</code>.` : serials.size > 1 ? html`. Different zone serials (${[...serials].join(', ')}): an update is propagating.` : '.';
 
@@ -116,7 +121,7 @@ function rootTable(results: RootResult[] | null, history: RootHistory | null, fr
 <td><strong>${s.letter}</strong> <code class="muted">${s.letter.toLowerCase()}.root-servers.net</code></td>
 <td>${s.operator}</td>
 <td><code>${s.ipv4}</code><br><code class="muted">${s.ipv6}</code></td>
-<td data-cell="status">${ok === undefined ? '—' : ok ? html`<span class="status ok">OK</span>` : html`<span class="status bad" title="${r?.error ?? ''}">Failed</span>`}</td>
+<td data-cell="status">${r?.untestable ? html`<span class="status info" title="${UNTESTABLE}">Not testable</span>` : ok === undefined ? '—' : ok ? html`<span class="status ok">OK</span>` : html`<span class="status bad" title="${r?.error ?? 'Failed in the last automatic check'}">Failed</span>`}</td>
 <td data-cell="query"${ms !== null && ms === fastest ? html` class="best" title="Fastest"` : ''}>${ms === null ? '—' : ms < 1 ? '<1 ms' : `${ms} ms`}</td>
 <td data-cell="instance"><code>${r ? (r.instance ?? r.error ?? '—') : (l?.instance ?? '—')}</code></td>
 <td>${pct(h?.availability ?? null)}</td>
@@ -165,11 +170,11 @@ ${rootTable(results, history, colo(c))}`;
     if (sub !== '' && !single) return json({ error: 'Not found' }, { status: 404 });
     if (sub === '' ) {
       const results = await runAllCached(c);
-      return json({ from: colo(c), results: results.map((r) => ({ root: `${r.server.letter.toLowerCase()}.root-servers.net`, ipv4: r.server.ipv4, connectMs: r.connectMs, queryMs: r.queryMs, serial: r.serial, instance: r.instance, error: r.error })) });
+      return json({ from: colo(c), results: results.map((r) => ({ root: `${r.server.letter.toLowerCase()}.root-servers.net`, ipv4: r.server.ipv4, connectMs: r.connectMs, queryMs: r.queryMs, serial: r.serial, instance: r.instance, error: r.error, untestable: r.untestable })) });
     }
     const server = ROOT_SERVERS.find((s) => s.letter === single![1]!.toUpperCase())!;
     const r = await cachedJson(`root:${colo(c)}:${server.letter}`, () => 30, () => testRoot(server));
-    return json({ root: server.letter, from: colo(c), connectMs: r.connectMs, queryMs: r.queryMs, serial: r.serial, instance: r.instance, error: r.error });
+    return json({ root: server.letter, from: colo(c), connectMs: r.connectMs, queryMs: r.queryMs, serial: r.serial, instance: r.instance, error: r.error, untestable: r.untestable });
   },
 
   article: html`<h2>What are the root servers?</h2>
@@ -218,7 +223,8 @@ results show how well that region is served. A background job repeats the same t
 24 hours of history.</p>
 <ul>
 <li><strong>Status:</strong> OK when the root answered both queries within the timeout, Failed otherwise. Hover
-over a failure to see the error.</li>
+over a failure to see the error. Not testable means the nearest instance of that root is served from Cloudflare’s own
+network, which Workers cannot open sockets to; it says nothing about the root itself, and such checks are not counted.</li>
 <li><strong>Query:</strong> the time from sending the queries to receiving the answers, without the TCP handshake.
 The fastest root in the current run is highlighted.</li>
 <li><strong>Root zone serial:</strong> the serial number from the SOA record of the root zone, in the format
