@@ -25,8 +25,8 @@
   "d1_databases": [
     { "binding": "DB", "database_name": "nettools", "database_id": "debf31ce-ff78-4ac6-97ee-bef749620d70", "migrations_dir": "migrations" }
   ],
-  // Root server monitoring every 10 minutes.
-  "triggers": { "crons": ["*/10 * * * *"] },
+  // Root server monitoring every 30 minutes, matching the 30-minute buckets of the 24-hour history.
+  "triggers": { "crons": ["*/30 * * * *"] },
   // Custom metrics per request (kind, route, country, colo, duration, status). Never user input or IPs.
   "analytics_engine_datasets": [
     { "binding": "EVENTS", "dataset": "nettools_events" }

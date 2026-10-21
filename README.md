@@ -32,7 +32,7 @@ here to read.
 | Subnet calculator | `/subnet-calculator` | IPv4/IPv6 network, broadcast, host range, netmask; split into smaller subnets |
 | Speed test | `/speed-test` | Download, upload, ping, jitter and data used, against the nearest Cloudflare data center |
 | DNS lookup | `/dns-lookup` | All common record types via 11 public resolvers, or one record compared across 10 of them |
-| Root DNS servers | `/root-dns-servers` | Live test and 24-hour history of all 13 root servers (cron every 10 minutes) |
+| Root DNS servers | `/root-dns-servers` | Live test and 24-hour history of all 13 root servers (cron every 30 minutes) |
 | DNSSEC check | `/dnssec-check` | Chain of trust from the TLD to the domain: DS, keys, algorithms, bogus detection |
 | WHOIS | `/whois` | Domains, IPs and AS numbers via RDAP, with WHOIS fallback for registries without RDAP |
 | Domain availability | `/domain-availability` | Whether a name is free across 12 popular endings, straight from the registries |

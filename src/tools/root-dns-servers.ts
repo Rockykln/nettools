@@ -102,7 +102,7 @@ function rootTable(results: RootResult[] | null, history: RootHistory | null, fr
   const fastest = Math.min(...timed.map((v) => v ?? Infinity));
   const max = history ? Math.max(10, ...history.roots.flatMap((r) => r.series.filter((v): v is number => v !== null && v > 0))) : 10;
 
-  let summary: SafeHtml | string = html`No measurements yet. The servers are checked every 10 minutes.`;
+  let summary: SafeHtml | string = html`No measurements yet. The servers are checked every 30 minutes.`;
   if (results) summary = html`Tested just now from Cloudflare <strong>${from}</strong>: ${okCount} of ${tested} testable roots answered`;
   else if (latestTs) summary = html`Last automatic check ${ago(latestTs)} from Cloudflare <strong>${latestColo ?? ''}</strong>: ${okCount} of ${tested} testable roots answered`;
   const serialNote =
@@ -139,7 +139,7 @@ const tool: Tool = {
   description:
     'Test all 13 DNS root servers (a.root-servers.net to m.root-servers.net) live: response time, root zone serial and which anycast instance answers.',
   h1: 'Root DNS server test',
-  lead: 'Status, response time and history of the 13 DNS root servers, checked every 10 minutes and on demand.',
+  lead: 'Status, response time and history of the 13 DNS root servers, checked every 30 minutes and on demand.',
   related: ['dns-lookup', 'whois', 'speed-test'],
   // Only the full live test (13 connections) is heavy; history reads stored samples and single tests have their own limit.
   heavy: (url) => url.searchParams.has('run') || /^\/api\/root-dns-servers\/?$/.test(url.pathname),
@@ -219,7 +219,7 @@ hints files from <code>https://www.internic.net/domain/named.root</code>.</p>
 <h2>What this test measures</h2>
 <p>For each of the 13 roots, the tool opens a TCP connection to port 53 on the IPv4 address and sends two queries
 over it. The test runs from the Cloudflare data center that handled your request, not from your device, so the
-results show how well that region is served. A background job repeats the same test every 10 minutes and keeps
+results show how well that region is served. A background job repeats the same test every 30 minutes and keeps
 24 hours of history.</p>
 <ul>
 <li><strong>Status:</strong> OK when the root answered both queries within the timeout, Failed otherwise. Hover

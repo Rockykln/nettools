@@ -157,7 +157,7 @@ export function llmsTxt(env: Env, tools: Tool[]): string {
     '',
     `- DNS lookups, ${RESOLVERS.length} public resolvers:`,
     ...resolvers,
-    '- Root DNS servers: TCP port 53 of all 13 root servers, live on request and every 10 minutes by a scheduled job (24-hour history).',
+    '- Root DNS servers: TCP port 53 of all 13 root servers, live on request and every 30 minutes by a scheduled job (24-hour history).',
     '- WHOIS: RDAP servers found through the IANA bootstrap registry (https://data.iana.org/rdap/), classic WHOIS on port 43 where no RDAP exists. Results are cached for up to one hour.',
     '- Port checker, website status and HTTP headers: TCP connections and HTTP requests made from Cloudflare\'s network, not from the visitor\'s device.',
     '- Email security: SPF, DKIM, DMARC, MTA-STS, TLS-RPT and BIMI records via Cloudflare DNS; the MTA-STS policy file over HTTPS.',
