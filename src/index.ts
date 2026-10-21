@@ -179,7 +179,7 @@ export function isCrawler(ua: string | null): boolean {
 
 // Paths only vulnerability scanners ask for (this site has no PHP, CMS or dotfiles). They get a bare 404 without
 // rendering the not-found page or recording metrics.
-const SCANNER_PATH = /\.(php\d?|aspx?|jsp|cgi|env|ini|sql|bak|git)(\/|$)|^\/(wp-|wordpress|xmlrpc|phpmyadmin|cgi-bin|\.git|\.env|\.aws|vendor\/|admin\/)/i;
+const SCANNER_PATH = /\.(php\d?|aspx?|jsp|cgi|env\w*|envrc|ini|sql|bak|old|dist|git|ya?ml|json|md)(\/|$)|^\/(wp-|wordpress|xmlrpc|phpmyadmin|cgi-bin|actuator|credentials|\.git|\.env|\.aws|\.github|vendor\/|admin\/|api\/config)|\/\/wp/i;
 
 export function isScannerPath(path: string): boolean {
   return SCANNER_PATH.test(path);
