@@ -59,6 +59,16 @@ describe('record data edge cases', () => {
     expect(() => parseMessage(buf)).toThrow(/RDLENGTH/);
   });
 
+  it('rejects CAA, DS and DNSKEY data shorter than their fixed fields', () => {
+    // A second answer follows, so the short record would otherwise read into it.
+    const short = (type: number, rdata: number[]) => () =>
+      parseMessage(response(buildQuery('example.com', type, { id: 1 }), [{ type, rdata }, { type: 1, rdata: [192, 0, 2, 1] }]));
+    expect(short(RR_TYPES.CAA, [0, 5, ...enc('issue')])).not.toThrow();
+    expect(short(RR_TYPES.CAA, [0, 9, ...enc('issue')])).toThrow(/RDLENGTH/);
+    expect(short(RR_TYPES.DS, [0, 1, 8])).toThrow(/RDLENGTH/);
+    expect(short(RR_TYPES.DNSKEY, [1, 1, 3])).toThrow(/RDLENGTH/);
+  });
+
   it('rejects extended label types and over-long names', () => {
     expect(() => one(RR_TYPES.CNAME, [0x41, 0])).toThrow(/label type/);
     const long: number[] = [];

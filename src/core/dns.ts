@@ -88,6 +88,7 @@ class Reader {
   constructor(readonly buf: Uint8Array, readonly view = new DataView(buf.buffer, buf.byteOffset, buf.byteLength)) {}
 
   need(n: number): void {
+    if (n < 0) throw new Error('Malformed DNS record: data longer than RDLENGTH');
     if (this.pos + n > this.buf.length) throw new Error('Truncated DNS message');
   }
   u8(): number { this.need(1); return this.buf[this.pos++]!; }
