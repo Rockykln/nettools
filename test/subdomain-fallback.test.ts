@@ -46,4 +46,30 @@ describe('subdomain finder fallback', () => {
     expect(body.source).toBe('Cert Spotter');
     expect(body.hosts.map((h) => h.name)).toEqual(['example.org', 'www.example.org']);
   });
+
+  it('does not ask Cert Spotter when crt.sh answers quickly', async () => {
+    vi.stubGlobal('caches', { default: { match: async () => undefined, put: async () => {} } });
+    const urls: string[] = [];
+    vi.stubGlobal('fetch', async (url: string) => {
+      urls.push(url);
+      return url.startsWith('https://crt.sh/')
+        ? Response.json([{ issuer_name: 'O=Test CA', name_value: 'a.example.net', not_before: '2026-01-01T00:00:00', not_after: '2027-01-01T00:00:00' }])
+        : Response.json(SPOTTER_PAGE);
+    });
+    const res = await tool.api!({ url: new URL('https://net.example.com/api/subdomain-finder?domain=example.net') } as never, '');
+    const body = (await res.json()) as { source: string };
+    expect(body.source).toBe('crt.sh');
+    await new Promise((r) => setTimeout(r, 10));
+    expect(urls.some((u) => u.includes('certspotter'))).toBe(false);
+  });
+
+  it('names the real problem when a domain has too many certificates', async () => {
+    vi.stubGlobal('caches', { default: { match: async () => undefined, put: async () => {} } });
+    vi.stubGlobal('fetch', async (url: string) =>
+      new Response('', { status: url.startsWith('https://crt.sh/') ? 502 : 504 }),
+    );
+    const res = await tool.api!({ url: new URL('https://net.example.com/api/subdomain-finder?domain=big.example') } as never, '');
+    expect(res.status).toBe(502);
+    expect(((await res.json()) as { error: string }).error).toContain('www.big.example');
+  });
 });

@@ -9,6 +9,8 @@ import type { Tool } from '../core/tool';
 const MAX_BYTES = 5 * 1024 * 1024;
 // Error message thrown by readJsonCapped for oversized bodies.
 const TOO_LARGE = 'Response too large';
+// Cert Spotter gives up after 10 s on domains with very many certificates.
+const TOO_MANY = 'Too many certificates';
 
 export interface CtEntry {
   issuer_name: string;
@@ -86,6 +88,7 @@ export async function certSpotter(domain: string): Promise<CtEntry[]> {
   for (let page = 0; page < SPOTTER_PAGES; page++) {
     const url = `https://api.certspotter.com/v1/issuances?domain=${encodeURIComponent(domain)}&include_subdomains=true&expand=dns_names&expand=issuer${after ? `&after=${encodeURIComponent(after)}` : ''}`;
     const res = await fetch(url, { signal: AbortSignal.timeout(15000), headers: { accept: 'application/json' } });
+    if (res.status === 504) throw new Error(TOO_MANY);
     if (!res.ok) throw new Error(`Cert Spotter returned HTTP ${res.status}`);
     const list = await readJsonCapped<unknown>(res, MAX_BYTES);
     if (!Array.isArray(list)) throw new Error('Cert Spotter returned an unexpected answer');
@@ -103,12 +106,26 @@ export async function certSpotter(domain: string): Promise<CtEntry[]> {
 async function search(domain: string, includeExpired: boolean): Promise<Report> {
   // An empty answer is cached briefly: crt.sh sometimes returns [] while its database is overloaded.
   return cachedJson(`ct2:${domain}:${includeExpired ? 1 : 0}`, (r) => (r.hosts.length ? 6 * 3600 : 600), async () => {
-    try {
-      return { domain, includeExpired, hosts: collectHosts(domain, await crtSh(domain, includeExpired)), source: 'crt.sh' };
-    } catch (e) {
-      // crt.sh is often overloaded. Cert Spotter only knows current certificates.
-      if (includeExpired || (e instanceof Error && e.message === TOO_LARGE)) throw e;
+    const fromCrt = crtSh(domain, includeExpired).then((e): Report => ({ domain, includeExpired, hosts: collectHosts(domain, e), source: 'crt.sh' }));
+    // Cert Spotter only knows current certificates.
+    if (includeExpired) return fromCrt;
+    // crt.sh is often overloaded or slow. Cert Spotter starts as soon as crt.sh fails, or after a few
+    // seconds in parallel; its small hourly quota is not spent when crt.sh answers quickly.
+    let crtDone = false;
+    const fromSpotter = new Promise<void>((resolve) => {
+      const timer = setTimeout(resolve, 6000);
+      fromCrt.then(() => { crtDone = true; clearTimeout(timer); resolve(); }, () => { clearTimeout(timer); resolve(); });
+    }).then(async (): Promise<Report> => {
+      if (crtDone) throw new Error('crt.sh answered');
       return { domain, includeExpired, hosts: collectHosts(domain, await certSpotter(domain)), source: 'Cert Spotter' };
+    });
+    try {
+      return await Promise.any([fromCrt, fromSpotter]);
+    } catch (e) {
+      const errors = e instanceof AggregateError ? e.errors : [e];
+      const message = (x: unknown) => (x instanceof Error ? x.message : '');
+      // The most telling reason: too large for crt.sh, too many for Cert Spotter, else the first one.
+      throw errors.find((x) => message(x) === TOO_LARGE || message(x) === TOO_MANY) ?? errors[0];
     }
   });
 }
@@ -150,8 +167,8 @@ const tool: Tool = {
     try {
       r = await search(domain, expired);
     } catch (e) {
-      const msg = e instanceof Error && e.message === TOO_LARGE
-        ? 'This domain has too many certificates to list here. Try a more specific subdomain.'
+      const msg = e instanceof Error && (e.message === TOO_LARGE || e.message === TOO_MANY)
+        ? `This domain has too many certificates to search here. Try a subdomain such as www.${domain}.`
         : 'The Certificate Transparency search (crt.sh) is slow or unavailable right now. Please try again in a minute.';
       return html`${form(value, expired)}<p class="error">${msg}</p>`;
     }
@@ -173,8 +190,8 @@ ${r.hosts.length ? html`<div class="table-scroll" tabindex="0" role="region" ari
     try {
       return json(await search(domain, c.url.searchParams.get('expired') === '1'));
     } catch (e) {
-      if (e instanceof Error && e.message === TOO_LARGE) {
-        return json({ error: 'This domain has too many certificates to list. Try a more specific subdomain.' }, { status: 502 });
+      if (e instanceof Error && (e.message === TOO_LARGE || e.message === TOO_MANY)) {
+        return json({ error: `This domain has too many certificates to search. Try a subdomain such as www.${domain}.` }, { status: 502 });
       }
       return json({ error: 'Certificate Transparency search is unavailable right now.' }, { status: 502 });
     }
