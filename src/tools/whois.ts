@@ -172,6 +172,30 @@ async function whoisFallback(domain: string): Promise<{ server: string; text: st
 }
 
 /** `retry: false` for callers with a tight subrequest budget (domain availability checks many names at once). */
+// Port 43 servers of the regional registries: the fallback when their RDAP service fails.
+const RIR_WHOIS: Record<string, string> = {
+  'rdap.arin.net': 'whois.arin.net',
+  'rdap.db.ripe.net': 'whois.ripe.net',
+  'rdap.apnic.net': 'whois.apnic.net',
+  'rdap.lacnic.net': 'whois.lacnic.net',
+  'rdap.afrinic.net': 'whois.afrinic.net',
+};
+
+/** WHOIS server for an RDAP base URL of a regional registry, or null. */
+export function rirWhoisServer(rdapBase: string): string | null {
+  try {
+    return RIR_WHOIS[new URL(rdapBase).hostname] ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/** The query a registry WHOIS server expects for an IP or AS; ARIN needs a type flag. */
+export function rirWhoisQuery(server: string, q: Query): string {
+  if (server === 'whois.arin.net') return q.kind === 'asn' ? `a ${q.value}` : `n ${q.value}`;
+  return q.kind === 'asn' ? `AS${q.value}` : q.value;
+}
+
 export async function lookupUncached(q: Query, { retry = true }: { retry?: boolean } = {}): Promise<Lookup> {
   const base = await rdapBase(q);
   if (!base) {
@@ -185,7 +209,16 @@ export async function lookupUncached(q: Query, { retry = true }: { retry?: boole
   let url = '';
   for (const [i, name] of names.entries()) {
     url = `${prefix}${path}/${name}`;
-    const res = await fetchRdap(url, i < names.length - 1, retry);
+    let res: Awaited<ReturnType<typeof fetchRdap>>;
+    try {
+      res = await fetchRdap(url, i < names.length - 1, retry);
+    } catch (e) {
+      const server = q.kind === 'domain' ? null : rirWhoisServer(prefix);
+      if (!server) throw e;
+      const text = await whoisQuery(server, rirWhoisQuery(server, q));
+      checkWhoisAnswer(server, text);
+      return { query: q, source: `whois://${server}`, rdap: null, whoisText: text, notFound: whoisNotFound(text) };
+    }
     if (res.data) return { query: q, source: url, rdap: res.data, whoisText: null, notFound: false };
   }
   return { query: q, source: url, rdap: null, whoisText: null, notFound: true };
@@ -239,6 +272,24 @@ export interface IpOwner {
   organization: string | null;
   country: string | null;
   abuse: string | null;
+}
+
+/** Owner fields from a plain registry WHOIS answer (ARIN and RIPE-style keys). */
+export function ipOwnerFromWhois(text: string): IpOwner {
+  const field = (...keys: string[]): string | null => {
+    for (const key of keys) {
+      const value = text.match(new RegExp(`^${key}:[ \\t]*(.*\\S)`, 'mi'))?.[1];
+      if (value) return value;
+    }
+    return null;
+  };
+  return {
+    network: field('NetName', 'netname'),
+    range: field('NetRange', 'inetnum', 'inet6num')?.replace(/\s+-\s+/, ' – ') ?? null,
+    organization: field('OrgName', 'org-name', 'descr', 'owner'),
+    country: field('Country', 'country')?.toUpperCase() ?? null,
+    abuse: field('OrgAbuseEmail', 'abuse-mailbox'),
+  };
 }
 
 /** The owner fields of an IP network RDAP record. */
@@ -309,7 +360,8 @@ function renderLookup(l: Lookup): SafeHtml {
   const head = html`<p class="result-head">Results for <code>${label}</code> · source <code class="wrap-any">${l.source}</code></p>`;
   if (l.notFound) return html`${head}<p class="muted">Not found. The ${l.query.kind === 'domain' ? 'domain is probably not registered' : 'registry has no record for it'}.</p>`;
   if (l.whoisText !== null) {
-    return html`${head}<p class="muted">This registry does not offer RDAP, so the plain WHOIS answer is shown.</p><pre class="raw">${stripComments(l.whoisText)}</pre>`;
+    const why = l.query.kind === 'domain' ? 'This registry does not offer RDAP' : 'The RDAP server did not answer';
+    return html`${head}<p class="muted">${why}, so the plain WHOIS answer is shown.</p><pre class="raw">${stripComments(l.whoisText)}</pre>`;
   }
   const rows = summaryRows(l.query.kind, l.rdap!).filter(([, v]) => v !== null && v !== undefined && v !== '');
   return html`${head}<table class="kv"><tbody>${rows.map(([k, v]) => html`<tr><th scope="row">${k}</th><td class="pre-line">${String(v)}</td></tr>`)}</tbody></table>

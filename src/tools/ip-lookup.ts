@@ -10,7 +10,7 @@ import { RESOLVERS, resolve } from '../core/transport';
 import { prefixReport, type PrefixReport } from './asn-lookup';
 import { checkLists, type ListResult } from './blacklist-check';
 import { countryName, ptr } from './what-is-my-ip';
-import { ipOwner, lookup, type IpOwner } from './whois';
+import { ipOwner, ipOwnerFromWhois, lookup, type IpOwner } from './whois';
 
 interface Report {
   ip: string;
@@ -59,8 +59,8 @@ async function report(c: ToolContext, ip: string, host: string | null): Promise<
     hostname,
     country,
     routing,
-    owner: whois?.rdap ? ipOwner(whois.rdap) : null,
-    ownerSource: whois?.rdap ? whois.source : null,
+    owner: whois?.rdap ? ipOwner(whois.rdap) : whois?.whoisText ? ipOwnerFromWhois(whois.whoisText) : null,
+    ownerSource: whois?.rdap || whois?.whoisText ? whois.source : null,
     blocklists: lists ? summarize(lists) : null,
   };
 }
