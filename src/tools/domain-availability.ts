@@ -68,7 +68,7 @@ async function check(domain: string): Promise<Check> {
   try {
     // Uncached on purpose: checkAll caches the whole result, and a cache read and write per domain would add
     // 24 subrequests, enough to hit the limit of 50 per request together with retries.
-    return interpret(domain, await lookupUncached({ input: domain, kind: 'domain', value: domain }));
+    return interpret(domain, await lookupUncached({ input: domain, kind: 'domain', value: domain }, { retry: false }));
   } catch {
     return { domain, status: 'unknown', registrar: null, expires: null, note: 'The registry did not answer.' };
   }

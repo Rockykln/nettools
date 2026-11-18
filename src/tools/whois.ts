@@ -81,8 +81,15 @@ async function rdapBase(q: Query): Promise<string | null> {
 
 type Rdap = Record<string, any>;
 
-async function fetchRdap(url: string, lenient: boolean): Promise<{ status: number; data: Rdap | null }> {
-  const res = await withTimeout(fetch(url, { headers: { accept: 'application/rdap+json, application/json' } }), 8000);
+async function fetchRdap(url: string, lenient: boolean, retry: boolean): Promise<{ status: number; data: Rdap | null }> {
+  const get = () => withTimeout(fetch(url, { headers: { accept: 'application/rdap+json, application/json' } }), 8000);
+  let res = await get();
+  // Handshakes between Cloudflare and some registries fail now and then (HTTP 525 from rdap.arin.net); a second try usually works.
+  if (res.status >= 500 && retry) {
+    await res.body?.cancel();
+    await new Promise((r) => setTimeout(r, 300));
+    res = await get();
+  }
   // Some registries answer 400/422 instead of 404 for names below the registrable level.
   if (res.status === 404 || (lenient && (res.status === 400 || res.status === 422))) {
     await res.body?.cancel();
@@ -163,7 +170,8 @@ async function whoisFallback(domain: string): Promise<{ server: string; text: st
   return last;
 }
 
-export async function lookupUncached(q: Query): Promise<Lookup> {
+/** `retry: false` for callers with a tight subrequest budget (domain availability checks many names at once). */
+export async function lookupUncached(q: Query, { retry = true }: { retry?: boolean } = {}): Promise<Lookup> {
   const base = await rdapBase(q);
   if (!base) {
     if (q.kind !== 'domain') throw new Error('No RDAP service found for this address range.');
@@ -176,7 +184,7 @@ export async function lookupUncached(q: Query): Promise<Lookup> {
   let url = '';
   for (const [i, name] of names.entries()) {
     url = `${prefix}${path}/${name}`;
-    const res = await fetchRdap(url, i < names.length - 1);
+    const res = await fetchRdap(url, i < names.length - 1, retry);
     if (res.data) return { query: q, source: url, rdap: res.data, whoisText: null, notFound: false };
   }
   return { query: q, source: url, rdap: null, whoisText: null, notFound: true };

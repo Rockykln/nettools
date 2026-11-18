@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { candidateNames, checkWhoisAnswer, lookup, parseQuery, whoisNotFound } from '../src/tools/whois';
+import { candidateNames, checkWhoisAnswer, lookup, lookupUncached, parseQuery, whoisNotFound } from '../src/tools/whois';
 
 describe('whois candidateNames', () => {
   it('always ends with the registrable name, even for deep subdomains', () => {
@@ -66,6 +66,31 @@ describe('RDAP lookup', () => {
     expect(l.notFound).toBe(false);
     expect(l.source).toBe('https://rdap.example/domain/example.test');
     expect(urls.filter((u) => u.includes('/domain/'))).toHaveLength(3);
+  });
+
+  it('retries an RDAP server error once', async () => {
+    vi.stubGlobal('caches', { default: { match: async () => undefined, put: async () => {} } });
+    let calls = 0;
+    vi.stubGlobal('fetch', async (input: string) => {
+      if (input.includes('data.iana.org')) return Response.json({ services: [[['192.0.2.0/24'], ['https://rdap.example/']]] });
+      calls++;
+      return calls === 1 ? new Response('', { status: 525 }) : Response.json({ handle: 'NET-192-0-2-0-1' });
+    });
+    const l = await lookup(parseQuery('192.0.2.1')!);
+    expect(l.rdap).toMatchObject({ handle: 'NET-192-0-2-0-1' });
+    expect(calls).toBe(2);
+  });
+
+  it('does not retry when asked not to', async () => {
+    vi.stubGlobal('caches', { default: { match: async () => undefined, put: async () => {} } });
+    let calls = 0;
+    vi.stubGlobal('fetch', async (input: string) => {
+      if (input.includes('data.iana.org')) return Response.json({ services: [[['test'], ['https://rdap.example/']]] });
+      calls++;
+      return new Response('', { status: 503 });
+    });
+    await expect(lookupUncached(parseQuery('example.test')!, { retry: false })).rejects.toThrow('RDAP server returned HTTP 503');
+    expect(calls).toBe(1);
   });
 
   it('treats a 400 for the registered name itself as an error, not as available', async () => {
