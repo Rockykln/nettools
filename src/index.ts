@@ -1,3 +1,4 @@
+import { appSiteAssociation } from './core/applinks';
 import { allow, clientIp, json, rateKey, text, withSecurityHeaders } from './core/http';
 import { llmsTxt, robotsTxt, sitemapXml } from './core/seo';
 import { logError, recordRequest, type EventKind } from './core/telemetry';
@@ -120,6 +121,9 @@ async function route(c: ToolContext): Promise<Response> {
       return apiPage(c);
     case '/robots.txt':
       return text(robotsTxt(env), { headers: { 'cache-control': 'public, max-age=3600' } });
+    // Universal Links: Apple's CDN fetches this to open tool links in the iPhone app.
+    case '/.well-known/apple-app-site-association':
+      return json(appSiteAssociation(), { headers: { 'cache-control': 'public, max-age=3600' } });
     case '/llms.txt':
       return text(llmsTxt(env, TOOLS), { headers: { 'cache-control': 'public, max-age=3600' } });
     case '/sitemap.xml':
@@ -159,7 +163,7 @@ function classify(c: ToolContext, status: number): { kind: EventKind; route: str
     return { kind: status === 429 ? 'rate_limited' : 'api', route };
   }
   if (path.startsWith('/badge/')) return { kind: status === 429 ? 'rate_limited' : 'api', route: 'badge' };
-  if (path.startsWith('/assets/') || path === '/robots.txt' || path === '/sitemap.xml' || path === '/llms.txt' || path === '/favicon.svg') return null;
+  if (path.startsWith('/assets/') || path.startsWith('/.well-known/') || path === '/robots.txt' || path === '/sitemap.xml' || path === '/llms.txt' || path === '/favicon.svg') return null;
   if (status >= 300 && status < 400) return { kind: 'page', route: 'redirect' };
   const tool = TOOLS_BY_SLUG.get(path.slice(1));
   if (status === 429) return { kind: 'rate_limited', route: tool?.slug ?? 'other' };

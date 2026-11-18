@@ -27,6 +27,18 @@ function expectSecurityHeaders(res: Response): void {
 }
 
 describe('routing', () => {
+  it('serves the Apple App Site Association as JSON without a redirect', async () => {
+    const res = await call('/.well-known/apple-app-site-association', { headers: { 'user-agent': 'AASA-Bot/1.0.0' } });
+    expect(res.status).toBe(200);
+    expect(res.headers.get('content-type')).toContain('application/json');
+    const body = (await res.json()) as { applinks: { details: { appIDs: string[]; components: { '/': string }[] }[] } };
+    const detail = body.applinks.details[0]!;
+    expect(detail.appIDs).toEqual(['S8KC2H969N.com.rockykln.nettools']);
+    const paths = detail.components.map((c) => c['/']);
+    expect(paths).toContain('/dns-lookup');
+    expect(paths.some((p) => p.startsWith('/api') || p.startsWith('/data') || p === '/legal')).toBe(false);
+  });
+
   it('redirects trailing slashes without leaving the site', async () => {
     const res = await call('//evil.com/');
     expect(res.status).toBe(301);
