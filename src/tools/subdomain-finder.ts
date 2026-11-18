@@ -30,6 +30,8 @@ interface Report {
   domain: string;
   includeExpired: boolean;
   hosts: Host[];
+  /** Which Certificate Transparency search answered. */
+  source?: 'crt.sh' | 'Cert Spotter';
 }
 
 const issuerOrg = (dn: string) => dn.match(/O=("([^"]+)"|[^,]+)/)?.[2] ?? dn.match(/O=([^,]+)/)?.[1] ?? dn;
@@ -58,15 +60,56 @@ export function collectHosts(domain: string, entries: CtEntry[]): Host[] {
   return [...hosts.values()].sort((a, b) => Number(a.wildcard) - Number(b.wildcard) || a.name.localeCompare(b.name));
 }
 
+async function crtSh(domain: string, includeExpired: boolean): Promise<CtEntry[]> {
+  const url = `https://crt.sh/?q=${encodeURIComponent(`%.${domain}`)}&output=json&deduplicate=Y${includeExpired ? '' : '&exclude=expired'}`;
+  const res = await fetch(url, { signal: AbortSignal.timeout(25000), headers: { accept: 'application/json' } });
+  if (!res.ok) throw new Error(`crt.sh returned HTTP ${res.status}`);
+  const entries = await readJsonCapped<unknown>(res, MAX_BYTES);
+  if (!Array.isArray(entries)) throw new Error('crt.sh returned an unexpected answer');
+  return entries as CtEntry[];
+}
+
+interface SpotterIssuance {
+  dns_names?: string[];
+  not_before?: string;
+  not_after?: string;
+  issuer?: { name?: string };
+}
+
+// Unauthenticated Cert Spotter allows only a few queries per hour; each page counts as one.
+const SPOTTER_PAGES = 2;
+
+/** Current certificates from Cert Spotter (SSLMate), in crt.sh's entry format. */
+export async function certSpotter(domain: string): Promise<CtEntry[]> {
+  const entries: CtEntry[] = [];
+  let after: string | null = null;
+  for (let page = 0; page < SPOTTER_PAGES; page++) {
+    const url = `https://api.certspotter.com/v1/issuances?domain=${encodeURIComponent(domain)}&include_subdomains=true&expand=dns_names&expand=issuer${after ? `&after=${encodeURIComponent(after)}` : ''}`;
+    const res = await fetch(url, { signal: AbortSignal.timeout(15000), headers: { accept: 'application/json' } });
+    if (!res.ok) throw new Error(`Cert Spotter returned HTTP ${res.status}`);
+    const list = await readJsonCapped<unknown>(res, MAX_BYTES);
+    if (!Array.isArray(list)) throw new Error('Cert Spotter returned an unexpected answer');
+    // crt.sh dates have no zone suffix; keep one format so sorting by string stays correct.
+    const day = (s: string | undefined) => String(s ?? '').replace(/Z$/, '');
+    for (const i of list as SpotterIssuance[]) {
+      entries.push({ name_value: (i.dns_names ?? []).join('\n'), not_before: day(i.not_before), not_after: day(i.not_after), issuer_name: i.issuer?.name ?? '' });
+    }
+    after = res.headers.get('link')?.match(/[?&]after=([^&>]+)/)?.[1] ?? null;
+    if (!after) break;
+  }
+  return entries;
+}
+
 async function search(domain: string, includeExpired: boolean): Promise<Report> {
   // An empty answer is cached briefly: crt.sh sometimes returns [] while its database is overloaded.
   return cachedJson(`ct2:${domain}:${includeExpired ? 1 : 0}`, (r) => (r.hosts.length ? 6 * 3600 : 600), async () => {
-    const url = `https://crt.sh/?q=${encodeURIComponent(`%.${domain}`)}&output=json&deduplicate=Y${includeExpired ? '' : '&exclude=expired'}`;
-    const res = await fetch(url, { signal: AbortSignal.timeout(25000), headers: { accept: 'application/json' } });
-    if (!res.ok) throw new Error(`crt.sh returned HTTP ${res.status}`);
-    const entries = await readJsonCapped<unknown>(res, MAX_BYTES);
-    if (!Array.isArray(entries)) throw new Error('crt.sh returned an unexpected answer');
-    return { domain, includeExpired, hosts: collectHosts(domain, entries as CtEntry[]) };
+    try {
+      return { domain, includeExpired, hosts: collectHosts(domain, await crtSh(domain, includeExpired)), source: 'crt.sh' };
+    } catch (e) {
+      // crt.sh is often overloaded. Cert Spotter only knows current certificates.
+      if (includeExpired || (e instanceof Error && e.message === TOO_LARGE)) throw e;
+      return { domain, includeExpired, hosts: collectHosts(domain, await certSpotter(domain)), source: 'Cert Spotter' };
+    }
   });
 }
 
