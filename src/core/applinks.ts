@@ -3,7 +3,7 @@ export const APP_ID = 'S8KC2H969N.com.rockykln.nettools';
 
 // Pages with a native screen in the app, plus the aliases that redirect to them.
 export const APP_LINK_PATHS = [
-  '/what-is-my-ip', '/speed-test', '/dns-lookup', '/dns-benchmark', '/dnssec-check', '/root-dns-servers',
+  '/what-is-my-ip', '/ipv6-test', '/speed-test', '/dns-lookup', '/dns-benchmark', '/dnssec-check', '/root-dns-servers',
   '/port-checker', '/tcp-ping', '/subnet-calculator', '/ip-range-to-cidr', '/mac-lookup', '/ip-lookup', '/asn-lookup',
   '/whois', '/domain-availability', '/subdomain-finder', '/is-it-down', '/response-time', '/http-headers', '/ssl-check',
   '/social-preview', '/robots-txt', '/email-security', '/blacklist-check', '/email-headers',
