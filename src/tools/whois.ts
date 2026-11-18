@@ -84,10 +84,11 @@ type Rdap = Record<string, any>;
 async function fetchRdap(url: string, lenient: boolean, retry: boolean): Promise<{ status: number; data: Rdap | null }> {
   const get = () => withTimeout(fetch(url, { headers: { accept: 'application/rdap+json, application/json' } }), 8000);
   let res = await get();
-  // Handshakes between Cloudflare and some registries fail now and then (HTTP 525 from rdap.arin.net); a second try usually works.
-  if (res.status >= 500 && retry) {
+  // Handshakes between Cloudflare and some registries fail often (HTTP 525 from rdap.arin.net); another try usually works.
+  for (const delay of retry ? [300, 800] : []) {
+    if (res.status < 500) break;
     await res.body?.cancel();
-    await new Promise((r) => setTimeout(r, 300));
+    await new Promise((r) => setTimeout(r, delay));
     res = await get();
   }
   // Some registries answer 400/422 instead of 404 for names below the registrable level.

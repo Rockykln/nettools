@@ -68,17 +68,17 @@ describe('RDAP lookup', () => {
     expect(urls.filter((u) => u.includes('/domain/'))).toHaveLength(3);
   });
 
-  it('retries an RDAP server error once', async () => {
+  it('retries RDAP server errors', async () => {
     vi.stubGlobal('caches', { default: { match: async () => undefined, put: async () => {} } });
     let calls = 0;
     vi.stubGlobal('fetch', async (input: string) => {
       if (input.includes('data.iana.org')) return Response.json({ services: [[['192.0.2.0/24'], ['https://rdap.example/']]] });
       calls++;
-      return calls === 1 ? new Response('', { status: 525 }) : Response.json({ handle: 'NET-192-0-2-0-1' });
+      return calls < 3 ? new Response('', { status: 525 }) : Response.json({ handle: 'NET-192-0-2-0-1' });
     });
     const l = await lookup(parseQuery('192.0.2.1')!);
     expect(l.rdap).toMatchObject({ handle: 'NET-192-0-2-0-1' });
-    expect(calls).toBe(2);
+    expect(calls).toBe(3);
   });
 
   it('does not retry when asked not to', async () => {
