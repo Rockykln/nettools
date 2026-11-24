@@ -1,8 +1,17 @@
 import { THEME_BOOT_HASH } from './theme-boot';
-import { parseIPv6 } from './net';
+import { isIPv4, parseIPv6 } from './net';
 
 export function clientIp(req: Request): string {
   return req.headers.get('cf-connecting-ip') ?? '0.0.0.0';
+}
+
+/**
+ * Visitor address forwarded by rockykln.com in x-visitor-ip. Only for the SiteLookups entrypoint, which is reachable
+ * through a service binding alone; public requests must never use it. Falls back to the connecting address.
+ */
+export function visitorIp(req: Request): string {
+  const ip = req.headers.get('x-visitor-ip')?.trim() ?? '';
+  return isIPv4(ip) || parseIPv6(ip) ? ip : clientIp(req);
 }
 
 /** Rate-limit key: the IPv4 address, or the /64 network for IPv6 (one end user usually owns a whole /64). */

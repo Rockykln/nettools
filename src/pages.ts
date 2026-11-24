@@ -246,7 +246,8 @@ a link if you share it.</p>
 
 <h2>Rate limiting</h2>
 <p>To prevent abuse, the number of requests per IP address (per /64 network for IPv6) is counted for up to 60 seconds
-and then discarded (Art. 6 (1) (f) GDPR; our interest is preventing abuse).</p>
+and then discarded (Art. 6 (1) (f) GDPR; our interest is preventing abuse). The network tools on rockykln.com use
+this site’s lookups; rockykln.com passes your IP address along so the same limit applies to you there.</p>
 
 <h2>Light and dark mode</h2>
 <p>If you switch between light and dark mode, your choice is saved in your browser’s local storage so the site

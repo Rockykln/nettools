@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import worker from '../src/index';
+import worker, { SiteLookups } from '../src/index';
 import { rateKey } from '../src/core/http';
 import { mapLimit } from '../src/core/async';
 import { cachedJson } from '../src/core/cache';
@@ -195,5 +195,38 @@ describe('security hardening', () => {
     }
     expect(spy).not.toHaveBeenCalled();
     spy.mockRestore();
+  });
+});
+
+describe('SiteLookups entrypoint', () => {
+  const keys: string[] = [];
+  const limited = { ...env, RL_TOOLS: { limit: async ({ key }: { key: string }) => (keys.push(key), { success: true }) } } as unknown as Env;
+  const site = new SiteLookups(exec, limited);
+  const headers = { 'cf-connecting-ip': '198.51.100.1', 'x-visitor-ip': '203.0.113.50' };
+
+  it('rate limits by the forwarded visitor address', async () => {
+    keys.length = 0;
+    const res = await site.fetch(new Request('https://nettools.internal/api/subnet-calculator?cidr=10.0.0.0/24', { headers }));
+    expect(res.status).toBe(200);
+    expect(keys).toEqual(['203.0.113.50']);
+  });
+
+  it('falls back to the connecting address for an invalid header', async () => {
+    keys.length = 0;
+    await site.fetch(new Request('https://nettools.internal/api/subnet-calculator?cidr=10.0.0.0/24', {
+      headers: { ...headers, 'x-visitor-ip': '203.0.113.50, 10.0.0.1' },
+    }));
+    expect(keys).toEqual(['198.51.100.1']);
+  });
+
+  it('serves only GET API routes', async () => {
+    expect((await site.fetch(new Request('https://nettools.internal/', { headers }))).status).toBe(404);
+    expect((await site.fetch(new Request('https://nettools.internal/api/speed-test', { method: 'POST', headers, body: 'x' }))).status).toBe(404);
+  });
+
+  it('is ignored on the public entry', async () => {
+    keys.length = 0;
+    await worker.fetch(new Request('https://net.example.com/api/subnet-calculator?cidr=10.0.0.0/24', { headers }) as never, limited, exec);
+    expect(keys).toEqual(['198.51.100.1']);
   });
 });

@@ -1,5 +1,6 @@
+import { WorkerEntrypoint } from 'cloudflare:workers';
 import { appSiteAssociation } from './core/applinks';
-import { allow, clientIp, json, rateKey, text, withSecurityHeaders } from './core/http';
+import { allow, clientIp, json, rateKey, text, visitorIp, withSecurityHeaders } from './core/http';
 import { llmsTxt, robotsTxt, sitemapXml } from './core/seo';
 import { logError, recordRequest, type EventKind } from './core/telemetry';
 import { badgeCached, badgeResponse } from './badges';
@@ -189,24 +190,29 @@ export function isScannerPath(path: string): boolean {
   return SCANNER_PATH.test(path);
 }
 
+/** One request with the address that rate limits and "your IP" use. */
+async function handle(req: Request, env: Env, exec: ExecutionContext, ip: string): Promise<Response> {
+  if (isScannerPath(new URL(req.url).pathname)) return new Response('Not found', { status: 404, headers: { 'content-type': 'text/plain', 'cache-control': 'public, max-age=86400' } });
+  setDohByIp((env as { DOH_BY_IP?: string }).DOH_BY_IP === '1');
+  const c: ToolContext = { req, env, exec, url: new URL(req.url), clientIp: ip };
+  const start = Date.now();
+  let res: Response;
+  try {
+    res = await route(c);
+  } catch (e) {
+    logError(c, c.url.pathname, e);
+    const msg = 'Internal error. Please try again later.';
+    res = c.url.pathname.startsWith('/api/') ? json({ error: msg }, { status: 500 }) : text(msg, { status: 500 });
+  }
+  const cls = classify(c, res.status);
+  if (res.status >= 500) recordRequest(c, { kind: 'error', route: cls?.route ?? 'unknown', status: res.status, ms: Date.now() - start });
+  else if (cls) recordRequest(c, { ...cls, status: res.status, ms: Date.now() - start });
+  return withSecurityHeaders(res);
+}
+
 export default {
-  async fetch(req, env, exec): Promise<Response> {
-    if (isScannerPath(new URL(req.url).pathname)) return new Response('Not found', { status: 404, headers: { 'content-type': 'text/plain', 'cache-control': 'public, max-age=86400' } });
-    setDohByIp((env as { DOH_BY_IP?: string }).DOH_BY_IP === '1');
-    const c: ToolContext = { req, env, exec, url: new URL(req.url), clientIp: clientIp(req) };
-    const start = Date.now();
-    let res: Response;
-    try {
-      res = await route(c);
-    } catch (e) {
-      logError(c, c.url.pathname, e);
-      const msg = 'Internal error. Please try again later.';
-      res = c.url.pathname.startsWith('/api/') ? json({ error: msg }, { status: 500 }) : text(msg, { status: 500 });
-    }
-    const cls = classify(c, res.status);
-    if (res.status >= 500) recordRequest(c, { kind: 'error', route: cls?.route ?? 'unknown', status: res.status, ms: Date.now() - start });
-    else if (cls) recordRequest(c, { ...cls, status: res.status, ms: Date.now() - start });
-    return withSecurityHeaders(res);
+  fetch(req, env, exec): Promise<Response> {
+    return handle(req, env, exec, clientIp(req));
   },
 
   async scheduled(_event, env, exec): Promise<void> {
@@ -215,3 +221,18 @@ export default {
     );
   },
 } satisfies ExportedHandler<Env>;
+
+/**
+ * Lookups of rockykln.com, which proxies its nettools app through its own worker. A named entrypoint is reachable
+ * only through a service binding, so the visitor address it forwards can be trusted here: each visitor gets their own
+ * rate limit and "your IP" means the visitor. Only the GET API routes; everything else is not served.
+ */
+export class SiteLookups extends WorkerEntrypoint<Env> {
+  override async fetch(req: Request): Promise<Response> {
+    const path = new URL(req.url).pathname;
+    if (!path.startsWith('/api/') || (req.method !== 'GET' && req.method !== 'HEAD')) {
+      return withSecurityHeaders(json({ error: 'Not found' }, { status: 404 }));
+    }
+    return handle(req, this.env, this.ctx, visitorIp(req));
+  }
+}
