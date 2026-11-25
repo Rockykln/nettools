@@ -1,9 +1,10 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { readCapped, readJsonCapped } from '../src/core/body';
 import { canonicalHost, isOwnHost, isPublicAddress } from '../src/core/guard';
-import { normalizeUrl, redirectTarget, type Chain, type Hop } from '../src/core/http-probe';
+import { fetchChain, normalizeUrl, redirectTarget, type Chain, type Hop } from '../src/core/http-probe';
 import { frameAncestors, hstsMaxAge, securityFindings } from '../src/tools/http-headers';
 import { verdictOf } from '../src/tools/is-it-down';
+import { parseHost } from '../src/tools/ssl-check';
 
 const stream = (...chunks: number[]) =>
   new ReadableStream<Uint8Array>({
@@ -115,5 +116,36 @@ describe('is-it-down verdict', () => {
     expect(verdictOf(chain({ error: 'x does not resolve', errorKind: 'unresolved' }))).toBe('down');
     expect(verdictOf(chain({ hops: [hop('https://a.example/', [], 403)] }))).toBe('blocked');
     expect(verdictOf(chain({ hops: [hop('https://a.example/', [], 200)] }))).toBe('up');
+  });
+});
+
+describe('redirect guard', () => {
+  afterEach(() => vi.unstubAllGlobals());
+  const env = { SITE_URL: 'https://net.rockykln.com' } as Env;
+
+  it('checks every hop and never requests a private redirect target', async () => {
+    for (const location of ['http://127.0.0.1/', 'http://2130706433/', 'http://0x7f.1/', 'http://[::1]/', 'http://169.254.169.254/latest/meta-data/', 'https://10.0.0.1:8443/', '//192.168.1.1/', 'https://net.rockykln.com/']) {
+      const requested: string[] = [];
+      vi.stubGlobal('fetch', async (input: RequestInfo | URL) => {
+        requested.push(String(input));
+        return new Response(null, { status: 302, headers: { location } });
+      });
+      const chain = await fetchChain('http://93.184.215.14/', env);
+      expect(requested, location).toEqual(['http://93.184.215.14/']);
+      expect(chain.hops.length, location).toBe(1);
+      expect(chain.errorKind, location).toBe('refused');
+    }
+  });
+});
+
+describe('ssl-check input', () => {
+  it('explains refused IP addresses instead of reporting a format error', () => {
+    expect(parseHost('https://Example.com/path')).toEqual({ host: 'example.com' });
+    for (const raw of ['10.0.0.1', '127.0.0.1:443', '2130706433', '0x7f.1', '[::1]', '::1', 'https://169.254.169.254/']) {
+      expect(parseHost(raw), raw).toEqual({ error: 'Private, local and reserved addresses cannot be checked.' });
+    }
+    expect(parseHost('1.1.1.1')).toEqual({ error: expect.stringContaining('by host name') });
+    expect(parseHost('localhost')).toEqual({ error: 'Enter a host name such as example.com.' });
+    expect(parseHost('')).toEqual({ error: 'Enter a host name such as example.com.' });
   });
 });

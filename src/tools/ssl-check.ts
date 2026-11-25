@@ -1,11 +1,11 @@
 import { connect } from 'cloudflare:sockets';
 import { readJsonCapped } from '../core/body';
 import { cachedJson } from '../core/cache';
-import { checkTarget, isCloudflareAddress } from '../core/guard';
+import { canonicalHost, checkTarget, isCloudflareAddress, isPublicAddress, PRIVATE_ADDRESS } from '../core/guard';
 import { html, type SafeHtml } from '../core/html';
 import { json } from '../core/http';
 import { fetchChain } from '../core/http-probe';
-import { normalizeDomain, socketHost } from '../core/net';
+import { isIP, normalizeDomain, socketHost } from '../core/net';
 import type { Tool, ToolContext } from '../core/tool';
 import { withTimeout } from '../core/transport';
 
@@ -154,10 +154,16 @@ function form(value: string): SafeHtml {
 }
 
 const INVALID = 'Enter a host name such as example.com.';
+const BY_NAME = 'Certificates are checked by host name. Enter the site’s name, such as example.com, not its IP address.';
 
-function parseHost(raw: string): string | null {
+/** The host name to check, or why the input is refused. IP addresses get their own message, not a format error. */
+export function parseHost(raw: string): { host: string } | { error: string } {
   const h = normalizeDomain(raw);
-  return h?.includes('.') ? h : null;
+  if (h?.includes('.')) return { host: h };
+  const s = raw.trim().replace(/^[a-z][a-z0-9+.-]*:\/\//i, '').split(/[/?#]/)[0]!;
+  const ip = canonicalHost(s.startsWith('[') ? s.slice(0, s.indexOf(']') + 1) : s.replace(/^([^:]*):\d+$/, '$1'));
+  if (ip && isIP(ip)) return { error: isPublicAddress(ip) ? BY_NAME : PRIVATE_ADDRESS };
+  return { error: INVALID };
 }
 
 const tool: Tool = {
@@ -177,8 +183,9 @@ const tool: Tool = {
   async render(c: ToolContext) {
     const value = (c.url.searchParams.get('host') ?? '').trim();
     if (!c.url.searchParams.has('host')) return form('');
-    const host = parseHost(value);
-    if (!host) return html`${form(value)}<p class="error">${INVALID}</p>`;
+    const parsed = parseHost(value);
+    if ('error' in parsed) return html`${form(value)}<p class="error">${parsed.error}</p>`;
+    const { host } = parsed;
     const target = await checkTarget(host, c.env);
     if (!target.ok) return html`${form(value)}<p class="error">${target.reason}</p>`;
     const r = await check(host, c.env, target.addresses.some(isCloudflareAddress), target.addresses[0]!);
@@ -200,8 +207,9 @@ ${r.certs === null ? html`<p class="muted">Certificate Transparency data is not 
   apiDoc: 'GET /api/ssl-check?host=github.com',
 
   async api(c) {
-    const host = parseHost(c.url.searchParams.get('host') ?? '');
-    if (!host) return json({ error: INVALID }, { status: 400 });
+    const parsed = parseHost(c.url.searchParams.get('host') ?? '');
+    if ('error' in parsed) return json({ error: parsed.error }, { status: 400 });
+    const { host } = parsed;
     const target = await checkTarget(host, c.env);
     if (!target.ok) return json({ error: target.reason }, { status: 400 });
     return json(await check(host, c.env, target.addresses.some(isCloudflareAddress), target.addresses[0]!));

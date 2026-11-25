@@ -31,6 +31,8 @@ export function isPublicAddress(ip: string): boolean {
   return isIP(ip) && !BLOCKED_RANGES.some((cidr) => cidrContains(cidr, ip));
 }
 
+export const PRIVATE_ADDRESS = 'Private, local and reserved addresses cannot be checked.';
+
 /** `policy`: the target is not allowed (private, own site); `dns`: its addresses could not be determined. */
 export type TargetCheck = { ok: true; addresses: string[] } | { ok: false; reason: string; kind: 'policy' | 'dns' };
 
@@ -72,7 +74,7 @@ async function resolveTarget(host: string, env: Env): Promise<TargetCheck> {
   if (!h) return { ok: false, kind: 'policy', reason: 'This is not a valid host name.' };
   if (isOwnHost(h, env)) return { ok: false, kind: 'policy', reason: 'This site cannot check itself.' };
   if (isIP(h)) {
-    return isPublicAddress(h) ? { ok: true, addresses: [h] } : { ok: false, kind: 'policy', reason: 'Private, local and reserved addresses cannot be checked.' };
+    return isPublicAddress(h) ? { ok: true, addresses: [h] } : { ok: false, kind: 'policy', reason: PRIVATE_ADDRESS };
   }
   const answers = await Promise.all(
     [RR_TYPES.A, RR_TYPES.AAAA].map((t) => resolve(RESOLVERS[0]!, h, t).then((r) => r.message.answers.filter((a) => a.type === t).map((a) => a.data)).catch(() => null)),
