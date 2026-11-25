@@ -48,7 +48,8 @@ here to read.
 | Response time | `/response-time` | DNS, TCP, TLS, time to first byte and download, median of three connections |
 | DNS speed benchmark | `/dns-benchmark` | Uncached and cached response times of 10 public resolvers |
 
-- No cookies, no ads, no third-party scripts; page views are counted server-side in Analytics Engine
+- No ads, no tracking, no third-party scripts; page views are counted server-side in Analytics Engine. The only
+  cookie is `cf_clearance` from Cloudflare's bot protection
 - Built-in observability: Workers Logs, traces and per-tool metrics in Analytics Engine ([docs/observability.md](docs/observability.md))
 - Every lookup works without JavaScript; results are rendered on the server and have shareable URLs
 - JSON API for every lookup tool, plain-text IP for the terminal

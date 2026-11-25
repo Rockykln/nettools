@@ -88,7 +88,7 @@ const tool: Tool = {
   category: 'ip',
   title: 'What Is My IP Address? IPv4/IPv6, ISP & Location',
   description:
-    'See your public IP address instantly, plus reverse DNS, ISP and ASN, approximate location and connection details. No ads, no cookies.',
+    'See your public IP address instantly, plus reverse DNS, ISP and ASN, approximate location and connection details. No ads, no tracking.',
   h1: 'What is my IP address?',
   lead: 'Your public IP address as the internet sees it, with ISP, reverse DNS and connection details.',
   personal: true,

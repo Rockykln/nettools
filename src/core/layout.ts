@@ -32,7 +32,7 @@ function footer(): SafeHtml {
   return html`<footer class="site-footer"><div class="wrap">
 <div class="footer-top">
 <div class="footer-brand"><a class="brand" href="/"><img src="/assets/brand/logo.svg?v=${SITE.assetVersion}" alt="" width="32" height="32">${SITE.name}</a>
-<p>${SITE.tagline}. Open source, no cookies, no sign-up.</p></div>
+<p>${SITE.tagline}. Open source, no tracking, no sign-up.</p></div>
 <div class="footer-cols">${CATEGORIES.map((cat) => {
     const tools = TOOLS.filter((t) => t.category === cat.id);
     if (!tools.length) return '';
@@ -88,7 +88,7 @@ ${o.noindex ? '' : html`<link rel="canonical" href="${canonical}">`}
 <meta name="twitter:image:alt" content="${imageAlt}">
 <meta name="twitter:label1" content="Price">
 <meta name="twitter:data1" content="Free, no sign-up">
-<meta name="twitter:label2" content="Ads &amp; cookies">
+<meta name="twitter:label2" content="Ads &amp; tracking">
 <meta name="twitter:data2" content="None">
 <link rel="icon" href="/favicon.ico" sizes="48x48">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">

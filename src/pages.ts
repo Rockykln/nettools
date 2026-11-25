@@ -97,10 +97,10 @@ export async function homePage(c: ToolContext): Promise<Response> {
 <span class="eyebrow">Free network tools</span>
 <h1>Free network tools for IP, DNS and speed – <em>without the ads.</em></h1>
 <p class="lead">${SITE.name} is a set of fast network tools for admins, developers and the curious. Every lookup runs
-live on Cloudflare's global network. No pop-ups, no cookies, no sign-up.</p>
+live on Cloudflare's global network. No pop-ups, no tracking, no sign-up.</p>
 <div class="hero-actions"><a class="btn" href="/speed-test">${icon('speed')}Run a speed test</a>
 <a class="btn secondary" href="/dns-lookup">${icon('dns')}DNS lookup</a></div>
-<ul class="trust">${['No ads', 'No cookies', 'No sign-up', 'Open source'].map((t) => html`<li>${icon('check')}${t}</li>`)}</ul>
+<ul class="trust">${['No ads', 'No tracking', 'No sign-up', 'Open source'].map((t) => html`<li>${icon('check')}${t}</li>`)}</ul>
 </div>
 <section class="tool" aria-label="Your IP address">
 ${ipHero(info, true)}
@@ -123,7 +123,7 @@ ${CATEGORIES.map((cat) => {
 <h2 class="section-title">Why ${SITE.name}?</h2>
 <div class="features">
 <div class="feature"><span class="tile">${icon('shield', '')}</span><h3>Private by design</h3>
-<p>No ads, no cookies, no profiles. What you enter is used for the lookup, not kept.</p></div>
+<p>No ads, no tracking, no profiles. What you enter is used for the lookup, not kept.</p></div>
 <div class="feature"><span class="tile">${icon('code', '')}</span><h3>Built for admins</h3>
 <p>Shareable result links, a free JSON API and plain-text output for scripts and terminals.</p></div>
 <div class="feature"><span class="tile">${icon('github', '')}</span><h3>Open source</h3>
@@ -146,7 +146,7 @@ ${CATEGORIES.map((cat) => {
   return page(c.env, {
     title: `Free Network Tools – IP, DNS, WHOIS & Speed Test | ${SITE.name}`,
     description:
-      'Free network tools: what is my IP, speed test, port checker, DNS lookup, WHOIS, SPF/DMARC check, subnet calculator and more. No ads, no cookies.',
+      'Free network tools: what is my IP, speed test, port checker, DNS lookup, WHOIS, SPF/DMARC check, subnet calculator and more. No ads, no tracking.',
     path: '/',
     body,
     personal: true,
@@ -159,7 +159,7 @@ export function legalPage(c: ToolContext): Response {
   // "OpenDNS (Cisco)" already carries parentheses; the location is added inside them, not as a second pair.
   const resolvers = RESOLVERS.map((r) => (r.name.endsWith(')') ? `${r.name.slice(0, -1)}, ${r.location.replace(/^Global/, 'global')})` : `${r.name} (${r.location.replace(/^Global/, 'global')})`)).join(', ');
   const summary: [string, string][] = [
-    ['Cookies', 'None. Only your light/dark choice is kept in your browser’s local storage.'],
+    ['Cookies', 'One security cookie from Cloudflare against bots; none for tracking or analytics. Your light/dark choice is kept in your browser’s local storage.'],
     ['Advertising', 'None.'],
     ['Your inputs', 'Sent to the services needed for the lookup. Not stored by us, except in Cloudflare’s technical logs (up to 7 days) and a short-lived result cache (up to 6 hours).'],
     ['Your IP address', 'Processed by Cloudflare to deliver the site and kept in its technical logs for up to 7 days; counted for 60 seconds for rate limiting; never part of our statistics.'],
@@ -191,6 +191,10 @@ processes your IP address and request data to deliver the site and protect it fr
 our interest is a secure and working website). Cloudflare acts as our processor under a data processing agreement
 (Art. 28 GDPR). Transfers to the USA rely on the EU-U.S. Data Privacy Framework and Standard Contractual Clauses.
 See <a href="https://www.cloudflare.com/privacypolicy/" rel="noopener">Cloudflare’s privacy policy</a>.</p>
+<p>To tell people from bots, Cloudflare’s bot protection runs a small check in your browser and may set the cookie
+<code>cf_clearance</code> (valid for up to a year). It only records that the check was passed, is not used for tracking
+or analytics, and this site does not read it. It is technically necessary to protect the site (§ 25 (2) No. 2 TDDDG;
+Art. 6 (1) (f) GDPR). The site sets no other cookies.</p>
 
 <h2>Usage statistics and logs</h2>
 <p>For each request the server records which tool was used, whether it succeeded, how long it took, the country

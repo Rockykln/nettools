@@ -125,7 +125,7 @@ export function llmsTxt(env: Env, tools: Tool[]): string {
   const lines = [
     `# ${SITE.name}`,
     '',
-    `> ${SITE.tagline}: ${tools.length} tools for IP addresses and networks, DNS (${RESOLVERS.length} public resolvers, ${COMPARE_RESOLVERS.length} in compare mode), domains and WHOIS/RDAP, websites (status, headers, certificates, social previews, robots.txt), email security and performance. Every lookup tool has a free JSON API. No sign-up, no ads, no cookies.`,
+    `> ${SITE.tagline}: ${tools.length} tools for IP addresses and networks, DNS (${RESOLVERS.length} public resolvers, ${COMPARE_RESOLVERS.length} in compare mode), domains and WHOIS/RDAP, websites (status, headers, certificates, social previews, robots.txt), email security and performance. Every lookup tool has a free JSON API. No sign-up, no ads, no tracking.`,
     '',
     '## Tools',
     '',
