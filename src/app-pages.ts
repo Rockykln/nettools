@@ -14,10 +14,9 @@ function appNav(current: string): SafeHtml {
   return html`<nav class="app-nav" aria-label="iPhone app">${links.map(([href, name]) => html`<a href="${href}"${href === current ? html` aria-current="page"` : ''}>${name}</a>`)}</nav>`;
 }
 
-/** The app icon in its light and dark variant; CSS shows the one matching the theme. */
+/** The app icon; the blue variant in both themes. */
 function appIcon(size: number, alt = `${SITE.name} app icon`): SafeHtml {
-  const v = SITE.assetVersion;
-  return html`<img class="app-icon light" src="/assets/brand/app-icon-light.svg?v=${v}" alt="${alt}" width="${size}" height="${size}"><img class="app-icon dark" src="/assets/brand/app-icon-dark.svg?v=${v}" alt="" width="${size}" height="${size}">`;
+  return html`<img class="app-icon" src="/assets/brand/app-icon.svg?v=${SITE.assetVersion}" alt="${alt}" width="${size}" height="${size}">`;
 }
 
 /** Header logo of the app pages: the app icon instead of the site logo. */
@@ -61,7 +60,6 @@ ${facts}
 export function appPage(c: ToolContext): Response {
   const body = html`<section class="hero"><div class="wrap hero-grid">
 <div>
-<span class="eyebrow">iPhone app</span>
 <h1>Network tools <em>for your iPhone.</em></h1>
 <p class="lead">The tools of this site as a native iPhone app, plus what only works on the device itself: ping,
 traceroute, LAN scan, Bonjour and the details of your Wi-Fi.</p>

@@ -308,10 +308,6 @@ ul.plain li { margin: 0; padding: 4px 0; break-inside: avoid; }
 .app-nav a:hover { background: var(--bg-soft); }
 .app-nav a[aria-current="page"] { background: var(--brand-50); border-color: var(--brand-100); color: var(--link); }
 .app-icon { display: block; border-radius: 22.4%; box-shadow: var(--shadow); }
-.app-icon.dark { display: none; }
-:root[data-theme="dark"] .app-icon.light { display: none; }
-:root[data-theme="dark"] .app-icon.dark { display: block; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .app-icon.light { display: none; } :root:not([data-theme="light"]) .app-icon.dark { display: block; } }
 .brand .app-icon { width: 32px; height: 32px; border-radius: 22%; box-shadow: none; }
 .feature.compact h3 { display: flex; align-items: center; gap: 10px; margin: 0 0 8px; }
 .feature.compact .tile { width: 32px; height: 32px; border-radius: 7px; }

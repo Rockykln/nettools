@@ -46,7 +46,7 @@ describe('routing', () => {
       const body = await res.text();
       expect(body, path).toContain('for iPhone');
       expect(body, path).toContain('href="/app/privacy"');
-      expect(body, path).toContain('app-icon-light.svg');
+      expect(body, path).toContain('app-icon.svg');
     }
     const overview = await (await call('/app')).text();
     // Without a TestFlight link the page says the beta opens soon instead of showing a dead button.
