@@ -303,6 +303,8 @@ ul.plain li { margin: 0; padding: 4px 0; break-inside: avoid; }
 .open-link .ico { width: 16px; height: 16px; }
 .wrap.narrow { max-width: 760px; }
 .wrap.narrow .lead { margin-bottom: 20px; }
+.app-nav { margin: -4px 0 16px; color: var(--muted); font-size: 15px; }
+.tool ol { padding-left: 1.25em; }
 .leave-host { font-size: 22px; margin: 0 0 6px; color: var(--ink); overflow-wrap: anywhere; }
 
 /* Copy as Markdown under result tables */

@@ -92,7 +92,7 @@ export function toolJsonLd(env: Env, tool: Tool): unknown[] {
 const xmlEscape = (s: string): string => s.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 
 export function sitemapXml(env: Env, tools: Tool[]): string {
-  const urls = ['/', '/api', ...tools.map((t) => `/${t.slug}`)];
+  const urls = ['/', '/api', '/app', '/app/support', ...tools.map((t) => `/${t.slug}`)];
   const entries = urls
     .map((p) => `  <url><loc>${xmlEscape(absolute(env, p))}</loc><lastmod>${SITE.updated}</lastmod></url>`)
     .join('\n');

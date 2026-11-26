@@ -7,6 +7,7 @@ import { badgeCached, badgeResponse } from './badges';
 import { sampleRoots } from './jobs/root-monitor';
 import { setDohByIp } from './core/transport';
 import type { ToolContext } from './core/tool';
+import { appPage, appPrivacyPage, appSupportPage } from './app-pages';
 import { apiPage, goPage, homePage, legalPage, notFoundPage, rateLimitedPage, toolPage } from './pages';
 import { LANDING_PAGES, TOOLS, TOOLS_BY_SLUG } from './tools/registry';
 
@@ -24,7 +25,7 @@ function crossSiteSubresource(req: Request): boolean {
   return req.headers.get('sec-fetch-site') === 'cross-site' && req.headers.get('sec-fetch-mode') !== 'navigate';
 }
 
-const STATIC_PAGES = new Set(['/', '/api', '/legal', '/ip', '/go']);
+const STATIC_PAGES = new Set(['/', '/api', '/legal', '/ip', '/go', '/app', '/app/privacy', '/app/support']);
 
 /** Alias target, or the lower-case form of a known page; otherwise the path unchanged. */
 function canonicalPath(path: string): string {
@@ -118,6 +119,12 @@ async function route(c: ToolContext): Promise<Response> {
       return legalPage(c);
     case '/go':
       return goPage(c);
+    case '/app':
+      return appPage(c);
+    case '/app/privacy':
+      return appPrivacyPage(c);
+    case '/app/support':
+      return appSupportPage(c);
     case '/api':
       return apiPage(c);
     case '/robots.txt':
@@ -169,7 +176,7 @@ function classify(c: ToolContext, status: number): { kind: EventKind; route: str
   const tool = TOOLS_BY_SLUG.get(path.slice(1));
   if (status === 429) return { kind: 'rate_limited', route: tool?.slug ?? 'other' };
   if (tool) return { kind: tool.isQuery?.(c.url) ? 'query' : 'page', route: tool.slug };
-  const named: Record<string, string> = { '/': 'home', '/ip': 'ip', '/legal': 'legal', '/go': 'go', '/api': 'api-docs' };
+  const named: Record<string, string> = { '/': 'home', '/ip': 'ip', '/legal': 'legal', '/go': 'go', '/api': 'api-docs', '/app': 'app', '/app/privacy': 'app-privacy', '/app/support': 'app-support' };
   return { kind: 'page', route: named[path] ?? 'not_found' };
 }
 

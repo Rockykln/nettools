@@ -39,6 +39,23 @@ describe('routing', () => {
     expect(paths.some((p) => p.startsWith('/api') || p.startsWith('/data') || p === '/legal')).toBe(false);
   });
 
+  it('serves the iPhone app pages, which stay in the browser', async () => {
+    for (const path of ['/app', '/app/privacy', '/app/support']) {
+      const res = await call(path);
+      expect(res.status, path).toBe(200);
+      const body = await res.text();
+      expect(body, path).toContain('for iPhone');
+      expect(body, path).toContain('class="app-nav"');
+    }
+    const overview = await (await call('/app')).text();
+    // Without a TestFlight link the page says the beta opens soon instead of showing a dead button.
+    expect(overview).toContain('opens soon');
+    expect(overview).not.toContain('Join the beta');
+    expect((await call('/APP/Support/')).headers.get('location')).toBe('/app/support');
+    const aasa = (await (await call('/.well-known/apple-app-site-association')).json()) as { applinks: { details: { components: { '/': string }[] }[] } };
+    expect(aasa.applinks.details[0]!.components.some((c) => c['/'].startsWith('/app'))).toBe(false);
+  });
+
   it('redirects trailing slashes without leaving the site', async () => {
     const res = await call('//evil.com/');
     expect(res.status).toBe(301);
