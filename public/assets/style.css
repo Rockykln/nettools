@@ -312,7 +312,10 @@ ul.plain li { margin: 0; padding: 4px 0; break-inside: avoid; }
 :root[data-theme="dark"] .app-icon.light { display: none; }
 :root[data-theme="dark"] .app-icon.dark { display: block; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .app-icon.light { display: none; } :root:not([data-theme="light"]) .app-icon.dark { display: block; } }
-.hero .app-icon { margin-bottom: 22px; }
+.brand .app-icon { width: 32px; height: 32px; border-radius: 22%; box-shadow: none; }
+.feature.compact h3 { display: flex; align-items: center; gap: 10px; margin: 0 0 8px; }
+.feature.compact .tile { width: 32px; height: 32px; border-radius: 7px; }
+.feature.compact .tile svg { width: 18px; height: 18px; }
 .app-title { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
 .app-title h1 { margin: 0; }
 .app-title .app-icon { width: 56px; height: 56px; }

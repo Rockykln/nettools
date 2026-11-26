@@ -20,6 +20,8 @@ export interface PageOptions {
   status?: number;
   /** Contains per-visitor data; never cache. */
   personal?: boolean;
+  /** Replaces the site logo in the header (the app pages show the app icon). */
+  brandIcon?: SafeHtml;
   /** Social preview image path (1200x630 PNG) and its alt text. */
   image?: string;
   imageAlt?: string;
@@ -105,7 +107,7 @@ ${(o.jsonLd ?? []).map((d) => html`<script type="application/ld+json">${jsonForS
 <body>
 <a class="skip" href="#main">Skip to content</a>
 <header class="site-header"><div class="wrap">
-<a class="brand" href="/"><img src="/assets/brand/logo.svg?v=${SITE.assetVersion}" alt="" width="32" height="32">${SITE.name}</a>
+<a class="brand" href="/">${o.brandIcon ?? html`<img src="/assets/brand/logo.svg?v=${SITE.assetVersion}" alt="" width="32" height="32">`}${SITE.name}</a>
 <nav aria-label="Main"><a href="/#tools" class="hide-sm">Tools</a><a href="/api" class="hide-sm">API</a>
 <a href="${SITE.github}" class="gh" rel="noopener" aria-label="GitHub">${icon('github')}<span class="hide-sm">GitHub</span></a>
 <button type="button" class="theme-toggle" data-theme-toggle aria-label="Dark mode" aria-pressed="false" title="Dark mode">${icon('sun', 'sun')}${icon('moon', 'moon')}</button></nav>

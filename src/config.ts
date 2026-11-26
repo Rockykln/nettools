@@ -9,11 +9,11 @@ export const SITE = {
   github: 'https://github.com/Rockykln/nettools',
   license: { name: 'MIT', url: 'https://github.com/Rockykln/nettools/blob/main/LICENSE' },
   /** Bump when public/assets change so browsers fetch the new files. */
-  assetVersion: '45',
+  assetVersion: '46',
   /** Last content update, used as <lastmod> in the sitemap. */
   updated: '2026-10-15',
   /** iPhone app. `testflight`: public beta link; until it is set, /app says the beta opens soon. */
-  app: { testflight: null as string | null, minIOS: '17' },
+  app: { testflight: null as string | null, minIOS: '17', email: 'nettools@rockykln.com' },
   operator: {
     name: 'Linus Klein',
     street: 'Kantstraße 5',

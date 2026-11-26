@@ -15,19 +15,22 @@ function appNav(current: string): SafeHtml {
 }
 
 /** The app icon in its light and dark variant; CSS shows the one matching the theme. */
-function appIcon(size: number): SafeHtml {
+function appIcon(size: number, alt = `${SITE.name} app icon`): SafeHtml {
   const v = SITE.assetVersion;
-  return html`<img class="app-icon light" src="/assets/brand/app-icon-light.svg?v=${v}" alt="${SITE.name} app icon" width="${size}" height="${size}"><img class="app-icon dark" src="/assets/brand/app-icon-dark.svg?v=${v}" alt="" width="${size}" height="${size}">`;
+  return html`<img class="app-icon light" src="/assets/brand/app-icon-light.svg?v=${v}" alt="${alt}" width="${size}" height="${size}"><img class="app-icon dark" src="/assets/brand/app-icon-dark.svg?v=${v}" alt="" width="${size}" height="${size}">`;
 }
+
+/** Header logo of the app pages: the app icon instead of the site logo. */
+const brandIcon = (): SafeHtml => appIcon(32, '');
 
 /** Page heading of the privacy and support pages: app icon next to the title. */
 function appTitle(title: string): SafeHtml {
   return html`<div class="app-title">${appIcon(64)}<h1>${title}</h1></div>`;
 }
 
-/** Icon tile, title and text: the feature cards of the home page. */
+/** Card with a small icon next to its title. */
 function feature(ico: string, title: string, text: SafeHtml | string): SafeHtml {
-  return html`<div class="feature"><span class="tile">${icon(ico, '')}</span><h3>${title}</h3><p>${text}</p></div>`;
+  return html`<div class="feature compact"><h3><span class="tile">${icon(ico, '')}</span>${title}</h3><p>${text}</p></div>`;
 }
 
 function betaCard(): SafeHtml {
@@ -58,13 +61,12 @@ ${facts}
 export function appPage(c: ToolContext): Response {
   const body = html`<section class="hero"><div class="wrap hero-grid">
 <div>
-${appIcon(96)}
 <span class="eyebrow">iPhone app</span>
 <h1>Network tools <em>for your iPhone.</em></h1>
 <p class="lead">The tools of this site as a native iPhone app, plus what only works on the device itself: ping,
 traceroute, LAN scan, Bonjour and the details of your Wi-Fi.</p>
-<div class="hero-actions"><a class="btn secondary" href="/app/support">${icon('mail')}Support</a>
-<a class="btn secondary" href="/app/privacy">${icon('shield')}Privacy</a></div>
+<div class="hero-actions"><a class="btn secondary" href="/app/support">${icon('support')}Support</a>
+<a class="btn secondary" href="/app/privacy">${icon('privacy')}Privacy</a></div>
 <ul class="trust">${['Free', 'No ads', 'No tracking', 'No account'].map((t) => html`<li>${icon('check')}${t}</li>`)}</ul>
 </div>
 ${betaCard()}
@@ -98,6 +100,7 @@ ${feature('code', 'Also in the browser', html`Every lookup of the app’s server
     description: 'Network tools as a native iPhone app: ping, traceroute, DNS, LAN scan, port checks, WHOIS and more. Free, no ads, no tracking. Join the public beta on TestFlight.',
     path: '/app',
     body,
+    brandIcon: brandIcon(),
     jsonLd: pageJsonLd(c.env, '/app', `${SITE.name} for iPhone`, 'The nettools iPhone app and its public beta.'),
   });
 }
@@ -122,7 +125,7 @@ ${appNav('/app/privacy')}
 </aside>
 <div class="legal-body">
 <h2>Controller</h2>
-<p>${o.name}, contact details in the <a href="/legal">legal notice</a>. Email: <a href="mailto:${o.email}">${o.email}</a>.</p>
+<p>${o.name}, contact details in the <a href="/legal">legal notice</a>. Email about the app: <a href="mailto:${SITE.app.email}">${SITE.app.email}</a>.</p>
 
 <h2>Checks that run on the server</h2>
 <p>Many tools can measure from outside your network. For these, and for lookups that only exist on the server (for
@@ -172,7 +175,7 @@ number of sessions, and the feedback and screenshots you choose to send.</p>
 <p>You have the rights described in the <a href="/legal">website’s privacy policy</a>: access, rectification, erasure,
 restriction, data portability, objection and complaint to a supervisory authority. As the app has no account and we
 keep no data that identifies you, there is usually nothing to disclose. Contact:
-<a href="mailto:${o.email}">${o.email}</a>.</p>
+<a href="mailto:${SITE.app.email}">${SITE.app.email}</a>.</p>
 </div>
 </div>
 </div>`;
@@ -181,14 +184,14 @@ keep no data that identifies you, there is usually nothing to disclose. Contact:
     description: `Privacy policy of the ${SITE.name} iPhone app: which data leaves your iPhone and where it goes.`,
     path: '/app/privacy',
     body,
+    brandIcon: brandIcon(),
     noindex: true,
     jsonLd: pageJsonLd(c.env, '/app/privacy', 'iPhone app privacy', 'Privacy policy of the nettools iPhone app.'),
   });
 }
 
 export function appSupportPage(c: ToolContext): Response {
-  const o = SITE.operator;
-  const mail = `mailto:${o.email}?subject=${encodeURIComponent(`${SITE.name} iPhone app`)}`;
+  const mail = `mailto:${SITE.app.email}?subject=${encodeURIComponent(`${SITE.name} iPhone app`)}`;
   const faq: [string, string, SafeHtml][] = [
     ['subnet', 'Why does the app ask for local network access?', html`Ping, port checks, the LAN scan and Bonjour reach devices in your own network, which iOS only allows with this permission. If you declined, turn it on in Settings › ${SITE.name} › Local Network.`],
     ['ip', 'Why does it ask for my location?', html`Only to show the name of your Wi-Fi, which iOS hides from apps without location access. The app never reads your location.`],
@@ -205,7 +208,7 @@ ${appNav('/app/support')}
 <aside class="tool legal-card" aria-label="Contact">
 <h2>Contact</h2>
 <p>Write with your iPhone model, iOS version and app version (shown under About in the app). The app needs iOS ${SITE.app.minIOS} or later.</p>
-<div class="hero-actions"><a class="btn" href="${mail}">${icon('mail')}${o.email}</a></div>
+<div class="hero-actions"><a class="btn" href="${mail}">${icon('mail')}${SITE.app.email}</a></div>
 <p>In the beta, you can also send feedback in TestFlight: take a screenshot and tap <strong>Share Beta Feedback</strong>.</p>
 <p class="hint">A problem with a lookup on the website as well? Issues are welcome on <a href="${SITE.github}/issues" rel="noopener">GitHub</a>.</p>
 </aside>
@@ -222,6 +225,7 @@ ${faq.map(([ico, q, a]) => feature(ico, q, a))}
     description: `Help with the ${SITE.name} iPhone app: permissions, widgets, local network checks and contact.`,
     path: '/app/support',
     body,
+    brandIcon: brandIcon(),
     jsonLd: pageJsonLd(c.env, '/app/support', 'iPhone app support', 'Help and contact for the nettools iPhone app.'),
   });
 }
